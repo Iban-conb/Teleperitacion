@@ -147,23 +147,43 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .consent-check{
   display:flex;align-items:flex-start;gap:12px;
   background:var(--md-surf);border:1.5px solid var(--md-outv);border-radius:12px;
-  padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .2s,background .2s
+  padding:14px;margin-bottom:10px;
+  cursor:pointer;transition:border-color .2s,background .2s;
+  user-select:none;-webkit-user-select:none;
 }
-.consent-check.checked{border-color:var(--cp-500);background:linear-gradient(135deg,#fff,#f3fdf8)}
-.consent-check input[type=checkbox]{
-  width:20px;height:20px;border-radius:5px;accent-color:var(--cp-500);
-  flex-shrink:0;margin-top:2px;cursor:pointer
+.consent-check:active{opacity:.85}
+.consent-check.checked{border-color:var(--cp-500);background:linear-gradient(135deg,#fff,#f0fdf8)}
+
+/* Checkbox custom — cuadrado con tick */
+.chk-box{
+  width:22px;height:22px;border-radius:6px;flex-shrink:0;margin-top:1px;
+  background:var(--n-100);border:2px solid var(--n-300);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
 }
+.consent-check.checked .chk-box{background:var(--cp-500);border-color:var(--cp-500)}
+.chk-ico{font-size:15px;color:#fff;opacity:0;transition:opacity .2s}
+.consent-check.checked .chk-ico{opacity:1}
+
 .cct strong{font-size:13px;font-weight:600;color:var(--n-800);display:block;margin-bottom:2px}
 .cct span{font-size:12px;color:var(--n-500);line-height:1.4}
 
+/* Botón firmar — como div para evitar problemas con disabled */
 .btn-consent{
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:calc(100% - 32px);margin:8px auto 24px;flex-shrink:0;
-  padding:17px;background:var(--n-300);color:var(--n-600);border:none;border-radius:100px;
-  font-family:var(--font);font-size:16px;font-weight:600;cursor:not-allowed;transition:all .3s
+  padding:17px;
+  background:var(--n-200);color:var(--n-400);
+  border:none;border-radius:100px;
+  font-family:var(--font);font-size:16px;font-weight:600;
+  cursor:default;transition:all .3s;
+  pointer-events:none;/* bloqueado hasta que estén todos marcados */
 }
-.btn-consent.ready{background:var(--cp-500);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(5,150,105,.42)}
+.btn-consent.ready{
+  background:var(--cp-500);color:#fff;
+  cursor:pointer;pointer-events:all;
+  box-shadow:0 4px 20px rgba(5,150,105,.42);
+}
 .btn-consent.ready:active{transform:scale(.97)}
 .btn-consent .material-icons-round{font-size:20px}
 
@@ -427,33 +447,43 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
   </div>
 
   <div class="consent-checks">
-    <label class="consent-check" id="cw1">
-      <input type="checkbox" id="chk1" onchange="updateConsent()">
+
+    <div class="consent-check" id="cw1" onclick="toggleCheck(1)">
+      <div class="chk-box" id="chkbox1">
+        <span class="material-icons-round chk-ico" id="chkico1">check</span>
+      </div>
       <div class="cct">
         <strong>Acepto la captación de imágenes y audio</strong>
         <span>Autorizo la grabación de la sesión de peritación del vehículo.</span>
       </div>
-    </label>
-    <label class="consent-check" id="cw2">
-      <input type="checkbox" id="chk2" onchange="updateConsent()">
+    </div>
+
+    <div class="consent-check" id="cw2" onclick="toggleCheck(2)">
+      <div class="chk-box" id="chkbox2">
+        <span class="material-icons-round chk-ico" id="chkico2">check</span>
+      </div>
       <div class="cct">
         <strong>Acepto el tratamiento de datos personales</strong>
         <span>He leído y acepto la política de privacidad conforme al RGPD.</span>
       </div>
-    </label>
-    <label class="consent-check" id="cw3">
-      <input type="checkbox" id="chk3" onchange="updateConsent()">
+    </div>
+
+    <div class="consent-check" id="cw3" onclick="toggleCheck(3)">
+      <div class="chk-box" id="chkbox3">
+        <span class="material-icons-round chk-ico" id="chkico3">check</span>
+      </div>
       <div class="cct">
         <strong>Declaro ser titular o autorizado del vehículo</strong>
         <span>Confirmo tener legitimación para autorizar esta peritación.</span>
       </div>
-    </label>
+    </div>
+
   </div>
 
-  <button class="btn-consent" id="btn-consent" onclick="if(!this.disabled) goPerms()">
+  <div class="btn-consent" id="btn-consent" onclick="consentContinue()">
     <span class="material-icons-round">verified</span>
-    Firmar y continuar
-  </button>
+    <span>Firmar y continuar</span>
+  </div>
 </section>
 
 
@@ -635,14 +665,19 @@ function markStep(n){
 }
 
 // ══ CONSENTIMIENTO ══
-function updateConsent(){
-  [1,2,3].forEach(n => {
-    document.getElementById('cw'+n).classList.toggle('checked', document.getElementById('chk'+n).checked);
-  });
-  const all = [1,2,3].every(n => document.getElementById('chk'+n).checked);
+const checks = {1:false, 2:false, 3:false};
+
+function toggleCheck(n){
+  checks[n] = !checks[n];
+  document.getElementById('cw'+n).classList.toggle('checked', checks[n]);
+  const all = checks[1] && checks[2] && checks[3];
   const btn = document.getElementById('btn-consent');
-  btn.disabled = !all;
   btn.classList.toggle('ready', all);
+}
+
+function consentContinue(){
+  if(!(checks[1] && checks[2] && checks[3])) return;
+  goPerms();
 }
 
 // ══ PERMISOS ══
