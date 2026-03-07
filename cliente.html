@@ -663,11 +663,17 @@ function connectToPeers(){
 // ══ RECIBIR COMANDOS DEL PERITO ══
 function handleCmd(data){
   if(!data) return;
-  const cmd = data.cmd || data.type; // compatibilidad ambos formatos
+  const cmd = data.cmd || data.type;
   if(cmd === 'PHOTO') captureAndSend();
   if(cmd === 'CAM')   switchCam();
   if(cmd === 'FLASH') toggleFlash();
-  if(cmd === 'END')   showToast('Sesión finalizada por el perito', 'warning');
+  if(cmd === 'END'){
+    document.getElementById('cs-dot').classList.remove('live');
+    document.getElementById('cs-text').textContent = 'Sesión finalizada por el perito';
+    document.getElementById('cam-rec').style.opacity = '0';
+    showToast('Sesión finalizada por el perito', 'warning');
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+  }
 }
 
 // ══ CAPTURAR FOTO DE ALTA CALIDAD Y ENVIAR AL PERITO ══
@@ -812,18 +818,16 @@ function showToast(msg, type='info'){
 
 // ══ ORIENTACIÓN HORIZONTAL ══
 function checkOrientation(){
-  const inCam = document.getElementById('scr-cam').classList.contains('active');
-  if(!inCam) return;
   const overlay = document.getElementById('rotate-overlay');
-  const isPortrait = window.innerHeight > window.innerWidth;
-  if(isPortrait){
-    overlay.classList.add('show');
-  } else {
-    overlay.classList.remove('show');
-  }
+  if(!overlay) return;
+  // En fullscreen window.innerHeight > window.innerWidth = portrait
+  // También funciona fuera de fullscreen
+  const isPortrait = window.screen.orientation
+    ? window.screen.orientation.type.startsWith('portrait')
+    : window.innerHeight > window.innerWidth;
+  overlay.classList.toggle('show', isPortrait);
 }
 
-// Intentar bloquear la orientación en landscape al entrar a la cámara
 function lockLandscape(){
   try {
     if(screen.orientation?.lock){
@@ -833,7 +837,9 @@ function lockLandscape(){
 }
 
 window.addEventListener('resize', checkOrientation);
-window.addEventListener('orientationchange', checkOrientation);
+window.addEventListener('orientationchange', ()=>{ setTimeout(checkOrientation, 100); });
+document.addEventListener('fullscreenchange', ()=>{ setTimeout(checkOrientation, 100); });
+document.addEventListener('webkitfullscreenchange', ()=>{ setTimeout(checkOrientation, 100); });
 </script>
 </body>
 </html>
