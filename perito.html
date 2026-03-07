@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Teleperitación — Panel del Perito</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
+:root {
+  --cp-50:#E4F1ED;--cp-100:#ADE1D1;--cp-200:#63D9B4;
+  --cp-300:#1FD69D;--cp-400:#0FB280;--cp-500:#059669;
+  --cp-600:#0A7151;--cp-700:#09523C;--cp-800:#083627;--cp-900:#051E17;
+  --c-error:#DC2626;--c-error-bg:rgba(220,38,38,.10);
+  --c-warning:#D97706;--c-warning-bg:rgba(217,119,6,.10);
+  --c-info:#2563EB;--c-info-bg:rgba(37,99,235,.09);
+  --c-success:#059669;--c-success-bg:rgba(5,150,105,.10);
+  --n-50:#F6F7F8;--n-100:#F3F4F6;--n-200:#E5E7EB;--n-300:#D1D5DB;
+  --n-400:#9CA3AF;--n-500:#6B7280;--n-600:#4B5563;
+  --n-700:#374151;--n-800:#1F2937;--n-900:#111827;
+  --md-bg:#F6F7F8;--md-surf:#FFFFFF;--md-surf2:#F3F4F6;--md-surf3:#E9F5F1;
+  --md-outline:#D1D5DB;--md-outv:#E5E7EB;
+  --e1:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  --e2:0 4px 8px rgba(16,24,40,.07),0 2px 4px rgba(16,24,40,.04);
+  --e3:0 8px 24px rgba(16,24,40,.08),0 4px 8px rgba(16,24,40,.04);
+  --e4:0 16px 40px rgba(16,24,40,.10),0 6px 12px rgba(16,24,40,.05);
+  --r:8px;--rm:12px;--rl:16px;--rxl:24px;
+  --font:'Roboto',system-ui,sans-serif;
+  --mono:'Roboto Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);font-size:14px;background:var(--md-bg);color:var(--n-800);line-height:1.45}
+
+.rpl{position:relative;overflow:hidden}
+.rpl::after{content:'';position:absolute;inset:0;background:currentColor;opacity:0;border-radius:inherit;transition:opacity .18s}
+.rpl:hover::after{opacity:.05}.rpl:active::after{opacity:.12}
+
+/* ═══════════════════════════════════════
+   TOP BAR (compartida)
+═══════════════════════════════════════ */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  height:60px;background:var(--md-surf);
+  border-bottom:1px solid var(--md-outv);box-shadow:var(--e1);
+  display:flex;align-items:center;padding:0 16px 0 18px;gap:10px;
+}
+.brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.brand-ico{
+  width:36px;height:36px;border-radius:10px;background:var(--cp-500);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(5,150,105,.38);
+}
+.brand-ico .material-icons-round{font-size:20px;color:#fff}
+.brand-name{font-size:15px;font-weight:700;color:var(--cp-700);line-height:1.1}
+.brand-sub{font-size:11px;color:var(--n-500)}
+.tb-sep{width:1px;height:28px;background:var(--md-outv);margin:0 2px;flex-shrink:0}
+.tb-chip{
+  display:flex;align-items:center;gap:4px;padding:5px 10px;
+  background:var(--md-surf2);border:1px solid var(--md-outv);
+  border-radius:100px;font-size:11px;color:var(--n-600);font-family:var(--mono);
+  white-space:nowrap;flex-shrink:0;
+}
+.tc-v{color:var(--n-800);font-weight:500}
+.tc-g{color:var(--cp-600);font-weight:600}
+.timer{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--n-300);letter-spacing:.07em;transition:color .4s;min-width:86px;flex-shrink:0}
+.timer.on{color:var(--cp-600)}
+.s-chip{
+  display:flex;align-items:center;gap:6px;padding:6px 12px;
+  border-radius:100px;font-size:12px;font-weight:500;border:1.5px solid;
+  transition:all .35s;white-space:nowrap;
+}
+.s-chip.idle  {color:var(--n-500);border-color:var(--n-300);background:var(--n-100)}
+.s-chip.wait  {color:var(--c-warning);border-color:rgba(217,119,6,.35);background:var(--c-warning-bg)}
+.s-chip.live  {color:var(--cp-600);border-color:rgba(5,150,105,.35);background:var(--c-success-bg)}
+.s-chip.ended {color:var(--c-error);border-color:rgba(220,38,38,.35);background:var(--c-error-bg)}
+.s-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.s-dot.pulse{animation:sdot 1.8s infinite}
+@keyframes sdot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.4}}
+.fab{
+  display:flex;align-items:center;gap:6px;padding:9px 18px;
+  background:var(--cp-500);color:#fff;border:none;border-radius:100px;
+  font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;
+  box-shadow:0 3px 12px rgba(5,150,105,.42);transition:all .2s;
+  margin-left:auto;flex-shrink:0;white-space:nowrap;
+}
+.fab:hover{background:var(--cp-400);box-shadow:0 5px 18px rgba(5,150,105,.5);transform:translateY(-1px)}
+.fab:active{transform:none;box-shadow:0 2px 8px rgba(5,150,105,.35)}
+.fab .material-icons-round{font-size:17px}
+
+/* ═══════════════════════════════════════
+   DESKTOP LAYOUT  ≥ 860px
+   Grid: [vídeo | sidebar] / [galería | sidebar continúa]
+═══════════════════════════════════════ */
+@media(min-width:860px){
+  html,body{height:100%;overflow:hidden}
+  .workspace{
+    height:calc(100vh - 60px);
+    display:grid;
+    /* Columna izquierda flexible, sidebar fija 292px */
+    grid-template-columns:1fr 292px;
+    /* Fila superior: vídeo acotado; fila media: notas+datos; fila inferior: galería */
+    grid-template-rows:auto 1fr 152px;
+  }
+
+  /* Sidebar ocupa todas las filas */
+  .sidebar{
+    grid-column:2;grid-row:1/4;
+    border-left:1px solid var(--md-outv);
+    background:var(--md-bg);
+    display:flex;flex-direction:column;
+    overflow-y:auto;overflow-x:hidden;
+  }
+
+  /* Vídeo — acotado, no ocupa toda la pantalla */
+  .video-wrap{
+    grid-column:1;grid-row:1;
+    background:#0c1510;
+    /* Máximo ~46% de la altura disponible */
+    height:clamp(180px, 44vh, 440px);
+    position:relative;overflow:hidden;
+    border-bottom:1px solid var(--md-outv);
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* Notas + datos en la fila media */
+  .mid-row{
+    grid-column:1;grid-row:2;
+    display:grid;grid-template-columns:1fr 1fr;
+    border-bottom:1px solid var(--md-outv);
+    overflow:hidden;
+  }
+
+  /* Galería en la fila inferior */
+  .gallery{
+    grid-column:1;grid-row:3;
+    border-top:none;
+  }
+
+  /* Mobile-only oculto en desktop */
+  .mob-only{display:none!important}
+  /* mob-video-row en desktop es transparente */
+  .mob-video-row{display:contents}
+  .mob-notes-wrap,.mob-data-wrap{display:contents}
+}
+
+/* ═══════════════════════════════════════
+   MOBILE LAYOUT  < 860px
+═══════════════════════════════════════ */
+@media(max-width:859px){
+  html,body{height:auto;overflow-x:hidden}
+  body{overflow-y:auto}
+
+/* ── Topbar mobile ── */
+  .desk-only{display:none!important}
+  .timer{display:none!important}
+  .brand-sub{display:none}
+  .brand-name{font-size:14px}
+  /* Topbar móvil: brand a la izq, status + fab a la dcha, bien alineados */
+  .topbar{padding:0 12px;gap:0;height:52px}
+  .brand{margin-right:auto}
+  .s-chip{flex-shrink:0;font-size:11.5px;padding:6px 11px}
+  /* FAB en móvil: solo icono */
+  .fab{margin-left:10px;padding:10px 13px;gap:0}
+  .fab .desk-only{display:none!important}
+
+  /* ── Workspace ── */
+  .workspace{display:flex;flex-direction:column}
+  .mid-row{display:contents}
+  .sidebar{display:contents}
+  /* Contenedor fila vídeo debe ser flex (override del display:contents de desktop) */
+  .mob-video-row{display:flex!important;flex-direction:row}
+  /* Wrappers notas/datos como bloques con order */
+  .mob-notes-wrap{display:flex!important;flex-direction:column;order:4}
+  .mob-data-wrap{display:flex!important;flex-direction:column;order:5}
+
+  /* ── Bloque vídeo + botones laterales ── */
+  /* Contenedor fila: [visor 4:3] + [columna botones] */
+  .mob-video-row{
+    display:flex;flex-direction:row;
+    width:100%;background:#0c1510;
+    flex-shrink:0;
+  }
+
+  /* Vídeo: aspect ratio 4:3, ocupa el espacio restante */
+  .video-wrap{
+    flex:1;aspect-ratio:4/3;
+    background:#0c1510;position:relative;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    min-width:0;
+  }
+
+  /* Columna de botones laterales — solo visible en móvil */
+  .mob-cam-btns{
+    display:flex!important;
+    flex-direction:column;
+    align-items:center;justify-content:space-around;
+    padding:8px 6px;gap:6px;
+    background:#0f1c13;
+    border-left:1px solid rgba(5,150,105,.15);
+    width:52px;flex-shrink:0;
+  }
+  .mob-cbtn{
+    width:40px;height:40px;border-radius:10px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:all .15s;
+    position:relative;overflow:hidden;
+  }
+  .mob-cbtn .material-icons-round{font-size:20px;color:rgba(255,255,255,.75);position:relative;z-index:1}
+  .mob-cbtn::after{content:'';position:absolute;inset:0;background:#fff;opacity:0;border-radius:inherit;transition:opacity .15s}
+  .mob-cbtn:active::after{opacity:.15}
+  .mob-cbtn:active{transform:scale(.92)}
+  .mob-cbtn:disabled{opacity:.28;cursor:not-allowed}
+  /* Botón foto: verde destacado */
+  .mob-cbtn.snap{background:var(--cp-500);border-color:var(--cp-600);box-shadow:0 2px 8px rgba(5,150,105,.4)}
+  .mob-cbtn.snap .material-icons-round{color:#fff}
+  .mob-cbtn.snap:active{background:var(--cp-400)}
+  /* Botón finalizar: rojo */
+  .mob-cbtn.stop{background:rgba(220,38,38,.18);border-color:rgba(220,38,38,.3)}
+  .mob-cbtn.stop .material-icons-round{color:var(--c-error)}
+
+  /* ── Orden de secciones en mobile ── */
+  /* 1. mob-video-row (ya en el HTML al inicio) */
+  /* 2. galería */
+  .gallery{order:2;border-top:1px solid var(--md-outv)}
+  /* 3. mapa GPS */
+  .mapcard{order:3;height:190px;margin:10px 12px 0;border-radius:var(--rm);border:1px solid var(--md-outv);box-shadow:var(--e1)}
+  /* 4. notas (mid-row → card de notas) */
+  .mob-notes-wrap{order:4}
+  /* 5. datos siniestro */
+  .mob-data-wrap{order:5}
+
+  /* Ocultar sidebar desktop en mobile (controles del grid 2col) */
+  .sidebar .card:not(.mapcard){display:none}
+  /* Mostrar el bloque mob-only de botones laterales */
+  .mob-only{display:flex!important}
+
+  /* Cards en mobile con margen consistente */
+  .card{margin:10px 12px 0}
+
+  /* Galería height en mobile */
+  .gallery .gscroll{height:100px}
+}
+
+/* ═══════════════════════════════════════
+   VÍDEO INTERIOR
+═══════════════════════════════════════ */
+.vid-idle{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:11px;
+  background:linear-gradient(160deg,#0f1a14,#142010,#0c1812);
+}
+.idle-pat{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(5,150,105,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(5,150,105,.05) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.idle-ico{width:60px;height:60px;border-radius:16px;background:rgba(5,150,105,.14);border:1px solid rgba(5,150,105,.22);display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.idle-ico .material-icons-round{font-size:30px;color:rgba(5,150,105,.5)}
+.idle-t{font-size:13px;font-weight:500;color:rgba(255,255,255,.34);position:relative;z-index:1}
+.idle-s{font-size:11px;color:rgba(255,255,255,.16);position:relative;z-index:1;text-align:center;max-width:220px;line-height:1.5;padding:0 12px}
+
+#vid-live{position:absolute;inset:0;display:none;background:linear-gradient(160deg,#081510,#0c1d14,#071310);align-items:center;justify-content:center}
+#vid-live span{font-size:10px;color:rgba(5,150,105,.14);letter-spacing:.22em;text-transform:uppercase}
+
+.vid-ov{position:absolute;inset:0;pointer-events:none}
+.vc{position:absolute;width:20px;height:20px;border-color:var(--cp-300);border-style:solid;opacity:.6}
+.vc.tl{top:12px;left:12px;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
+.vc.tr{top:12px;right:12px;border-width:2px 2px 0 0;border-radius:0 2px 0 0}
+.vc.bl{bottom:12px;left:12px;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
+.vc.br{bottom:12px;right:12px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
+.vcross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;display:none}
+.vcross.show{display:block}
+.vcross::before{content:'';position:absolute;width:1.5px;height:100%;left:50%;transform:translateX(-50%);background:var(--cp-300);opacity:.45}
+.vcross::after{content:'';position:absolute;height:1.5px;width:100%;top:50%;transform:translateY(-50%);background:var(--cp-300);opacity:.45}
+.vsweep{position:absolute;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--cp-300),transparent);opacity:.28;top:0;animation:swp 3.5s linear infinite;display:none}
+.vsweep.show{display:block}
+@keyframes swp{from{top:0}to{top:100%}}
+.rec-badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(220,38,38,.92);color:#fff;border-radius:100px;padding:4px 12px;font-size:10px;font-weight:700;letter-spacing:.05em;opacity:0;transition:opacity .3s;pointer-events:none}
+.rec-badge.show{opacity:1}
+.rdot{width:6px;height:6px;border-radius:50%;background:#fff;animation:rd 1s infinite}
+@keyframes rd{0%,100%{opacity:1}50%{opacity:.2}}
+.hud{position:absolute;font-family:var(--mono);font-size:9px;color:rgba(5,150,105,.7);display:none;line-height:1.6}
+.hud.show{display:block}
+.hud.tl{top:14px;left:42px}.hud.tr{top:14px;right:42px;text-align:right}
+.hud.bl{bottom:14px;left:42px}.hud.br{bottom:14px;right:42px;text-align:right}
+.pflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20;transition:opacity .04s}
+.pflash.on{opacity:1}
+
+/* ═══════════════════════════════════════
+   CARD GENÉRICA
+═══════════════════════════════════════ */
+.card{background:var(--md-surf);border:1px solid var(--md-outv);border-radius:var(--rm);box-shadow:var(--e1);overflow:hidden;flex-shrink:0}
+/* en desktop dentro del mid-row */
+@media(min-width:860px){
+  .mid-row .card{margin:10px 8px;border-radius:var(--rm)}
+  .mid-row .card:first-child{margin-left:10px}
+  .mid-row .card:last-child{margin-right:10px}
+}
+@media(max-width:859px){
+  .card{margin:10px 12px 0}
+  .card:last-child{margin-bottom:10px}
+}
+.card.grow{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.card-head{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--md-outv);background:var(--md-surf3)}
+.card-head .material-icons-round{font-size:15px;color:var(--cp-500)}
+.card-head span{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--n-600)}
+.card-body{padding:12px}
+.card-body.fill{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column}
+
+/* ═══════════════════════════════════════
+   CONTROLES CÁMARA
+═══════════════════════════════════════ */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cbtn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 6px;background:var(--md-surf);border:1px solid var(--md-outv);
+  border-radius:var(--rm);cursor:pointer;font-family:var(--font);
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.cbtn::after{content:'';position:absolute;inset:0;background:var(--cp-500);opacity:0;transition:opacity .15s}
+.cbtn:hover:not(:disabled)::after{opacity:.06}
+.cbtn:active:not(:disabled)::after{opacity:.13}
+.cbtn:hover:not(:disabled){border-color:var(--cp-300);box-shadow:var(--e2);transform:translateY(-1px)}
+.cbtn:active:not(:disabled){transform:none}
+.cbtn:disabled{opacity:.35;cursor:not-allowed}
+.cbtn .material-icons-round{font-size:20px;color:var(--cp-500);position:relative;z-index:1}
+.cbtn .cl{font-size:10px;font-weight:500;text-transform:uppercase;color:var(--n-500);position:relative;z-index:1}
+.cbtn.snap{grid-column:span 2;background:var(--cp-500);border-color:var(--cp-500);padding:12px;box-shadow:0 2px 10px rgba(5,150,105,.38)}
+.cbtn.snap .material-icons-round{color:#fff;font-size:22px}
+.cbtn.snap .cl{color:rgba(255,255,255,.88);font-size:11px;font-weight:600}
+.cbtn.snap::after{background:#fff}
+.cbtn.snap:hover:not(:disabled){background:var(--cp-400);border-color:var(--cp-400);box-shadow:0 4px 16px rgba(5,150,105,.46)}
+.cbtn.stop{background:var(--c-error-bg);border-color:rgba(220,38,38,.22)}
+.cbtn.stop .material-icons-round{color:var(--c-error)}
+.cbtn.stop .cl{color:var(--c-error)}
+.cbtn.stop::after{background:var(--c-error)}
+.cbtn.stop:hover:not(:disabled){border-color:rgba(220,38,38,.44);box-shadow:0 2px 8px rgba(220,38,38,.15)}
+
+/* Data rows */
+.dr{display:flex;align-items:center;padding:6px 0;border-bottom:1px solid var(--md-outv);gap:8px}
+.dr:last-child{border-bottom:none}
+.dr-l{font-size:11px;color:var(--n-400);font-weight:500;min-width:68px}
+.dr-v{font-size:12px;font-weight:500;color:var(--n-800);font-family:var(--mono);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dr-v.green{color:var(--cp-600)}
+.dr-v.blue{color:var(--c-info)}
+.notes{width:100%;resize:none;flex:1;min-height:56px;background:var(--n-50);border:1.5px solid var(--md-outv);border-radius:6px;padding:8px 10px;color:var(--n-800);font-family:var(--font);font-size:13px;line-height:1.5;outline:none;transition:border-color .2s,box-shadow .2s}
+.notes:focus{border-color:var(--cp-400);box-shadow:0 0 0 3px rgba(5,150,105,.12)}
+.notes::placeholder{color:var(--n-400)}
+
+/* ═══════════════════════════════════════
+   BARRA INFO MÓVIL
+═══════════════════════════════════════ */
+.mob-info-bar{
+  background:var(--md-surf);
+  border-bottom:1px solid var(--md-outv);
+  padding:8px 12px;gap:8px;
+  flex-wrap:wrap;
+  order:1;
+}
+.mib-chip{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 10px;
+  background:var(--md-surf2);border:1px solid var(--md-outv);
+  border-radius:100px;font-size:11px;color:var(--n-700);font-family:var(--mono);
+}
+.mib-chip .material-icons-round{font-size:13px;color:var(--cp-500)}
+.mib-timer{transition:color .4s}
+.mib-timer.on{background:var(--c-success-bg);border-color:rgba(5,150,105,.3);color:var(--cp-700)}
+.mib-timer.on .material-icons-round{color:var(--cp-500)}
+
+/* ═══════════════════════════════════════
+   GALERÍA (card unificada)
+═══════════════════════════════════════ */
+.gallery{background:var(--md-surf);display:flex;flex-direction:column;overflow:hidden}
+
+/* Desktop */
+@media(min-width:860px){
+  .gallery{
+    grid-column:1;grid-row:3;
+    border-top:1px solid var(--md-outv);
+    border-radius:0;border:none;box-shadow:none;
+  }
+}
+/* Mobile */
+@media(max-width:859px){
+  .gallery{
+    order:2;
+    margin:10px 12px 0;
+    border-radius:var(--rm)!important;
+    border:1px solid var(--md-outv)!important;
+    box-shadow:var(--e1)!important;
+  }
+}
+
+/* Chip contador fotos */
+.g-count-chip{
+  display:flex;align-items:center;gap:4px;
+  margin-left:6px;
+  padding:3px 9px;
+  background:var(--cp-500);color:#fff;
+  border-radius:100px;font-size:11px;font-weight:700;
+  flex-shrink:0;
+}
+.g-count-chip .material-icons-round{font-size:13px;color:#fff}
+
+/* Botón exportar */
+.g-export-btn{
+  margin-left:auto;
+  display:flex;align-items:center;gap:5px;
+  padding:6px 14px;
+  background:var(--cp-500);color:#fff;
+  border:none;border-radius:100px;
+  font-family:var(--font);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 2px 8px rgba(5,150,105,.32);
+  flex-shrink:0;
+}
+.g-export-btn .material-icons-round{font-size:15px;color:#fff}
+.g-export-btn:hover{background:var(--cp-400);box-shadow:0 3px 12px rgba(5,150,105,.46);transform:translateY(-1px)}
+.g-export-btn:active{transform:none;box-shadow:0 1px 4px rgba(5,150,105,.22)}
+
+.gscroll{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  overflow-x:auto;overflow-y:hidden;
+  min-height:104px;
+}
+.gscroll::-webkit-scrollbar{height:3px}
+.gscroll::-webkit-scrollbar-thumb{background:var(--n-300);border-radius:2px}
+.gempty{display:flex;align-items:center;gap:7px;color:var(--n-400);font-size:12px;white-space:nowrap}
+.gempty .material-icons-round{font-size:16px;color:var(--n-300)}
+
+/* Thumbnail con botón eliminar */
+.thumb{
+  flex-shrink:0;width:108px;height:80px;border-radius:8px;
+  border:1.5px solid var(--md-outv);overflow:hidden;cursor:pointer;
+  position:relative;background:var(--md-surf2);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;box-shadow:var(--e1);
+}
+.thumb:hover{border-color:var(--cp-400);box-shadow:var(--e3),0 0 0 2px rgba(5,150,105,.12);z-index:2}
+.thumb:hover .thumb-del{opacity:1}
+.tlbl{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.54));padding:3px 5px 4px;font-size:9px;font-family:var(--mono);color:rgba(255,255,255,.88);text-align:right}
+.thumb-del{
+  position:absolute;top:4px;right:4px;
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(220,38,38,.88);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .18s;z-index:3;
+}
+.thumb-del .material-icons-round{font-size:13px;color:#fff}
+.thumb-del:hover{background:rgba(220,38,38,1);transform:scale(1.12)}
+.tin{animation:tin .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes tin{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ═══════════════════════════════════════
+   MAPA
+═══════════════════════════════════════ */
+.mapcard{background:var(--md-surf);display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:860px){.mapcard{flex:1;min-height:120px}}
+@media(max-width:859px){.mapcard{height:190px;margin:10px 12px;border-radius:var(--rm);border:1px solid var(--md-outv);box-shadow:var(--e1)}}
+.mbar{display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--md-outv)}
+.mbar .material-icons-round{font-size:15px;color:var(--cp-500)}
+.mbar-t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--n-600)}
+.macc{margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--c-info)}
+.mbody{flex:1;position:relative;background:#eef5ee;overflow:hidden;min-height:60px}
+.mgrid{width:100%;height:100%;display:none;background-color:#eef5ee;background-image:linear-gradient(rgba(5,150,105,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(5,150,105,.07) 1px,transparent 1px),linear-gradient(rgba(5,150,105,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(5,150,105,.03) 1px,transparent 1px);background-size:40px 40px,40px 40px,8px 8px,8px 8px;position:relative}
+.mroad-h{position:absolute;left:0;right:0;background:rgba(255,255,255,.82)}
+.mroad-v{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.82)}
+.mpin{position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);display:none}
+.mpin.show{display:block;animation:mpin .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes mpin{from{transform:translate(-50%,-75%);opacity:0}to{transform:translate(-50%,-100%);opacity:1}}
+.mpin-h{width:13px;height:13px;border-radius:50%;background:var(--cp-500);margin:0 auto;box-shadow:0 0 0 4px rgba(5,150,105,.2),0 2px 8px rgba(5,150,105,.42);animation:mpp 2.5s infinite}
+@keyframes mpp{0%,100%{box-shadow:0 0 0 4px rgba(5,150,105,.2),0 2px 8px rgba(5,150,105,.4)}50%{box-shadow:0 0 0 8px rgba(5,150,105,.08),0 2px 14px rgba(5,150,105,.55)}}
+.mpin-s{width:2px;height:9px;background:var(--cp-500);margin:0 auto;border-radius:0 0 2px 2px}
+.mnosig{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--n-400);font-size:12px;background:#eef5ee}
+.mnosig .material-icons-round{font-size:28px;color:var(--n-300)}
+.mcbar{position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.92);backdrop-filter:blur(4px);border-top:1px solid var(--md-outv);padding:5px 10px;display:none;justify-content:space-between;align-items:center}
+.mcbar.show{display:flex}
+.mcv{font-family:var(--mono);font-size:10px;color:var(--cp-700)}
+.mca{font-size:10px;color:var(--n-500)}
+
+/* ═══════════════════════════════════════
+   SIDEBAR DESKTOP
+═══════════════════════════════════════ */
+.sidebar .card{margin:10px 10px 0;border-radius:var(--rm)}
+.sidebar .card:last-child{margin-bottom:10px}
+@media(min-width:860px){
+  .sidebar .card.grow{flex:1}
+}
+
+/* ═══════════════════════════════════════
+   DIALOG ENVIAR ENLACE
+═══════════════════════════════════════ */
+.scrim{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.42);backdrop-filter:blur(3px);align-items:center;justify-content:center}
+.scrim.open{display:flex;animation:scrim .2s ease}
+@keyframes scrim{from{opacity:0}to{opacity:1}}
+.dialog{background:var(--md-surf);border-radius:var(--rxl);width:520px;max-width:96vw;max-height:93vh;overflow-y:auto;box-shadow:var(--e4);animation:dlin .26s cubic-bezier(.34,1.56,.64,1)}
+@keyframes dlin{from{opacity:0;transform:scale(.91)}to{opacity:1;transform:scale(1)}}
+.dlg-head{display:flex;align-items:center;gap:11px;padding:18px 20px 14px;background:var(--md-surf3);border-bottom:1px solid var(--md-outv);position:sticky;top:0;z-index:1}
+.dlg-ico{width:40px;height:40px;border-radius:var(--rm);background:var(--cp-500);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(5,150,105,.38);flex-shrink:0}
+.dlg-ico .material-icons-round{font-size:21px;color:#fff}
+.dlg-head h2{font-size:17px;font-weight:700;color:var(--n-900);line-height:1.2}
+.dlg-head p{font-size:11px;color:var(--n-500);margin-top:1px}
+.dlg-close{margin-left:auto;background:none;border:none;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--n-500);transition:all .15s}
+.dlg-close:hover{background:var(--n-100);color:var(--n-800)}
+.dlg-close .material-icons-round{font-size:19px}
+.dlg-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+
+/* Tabs canal */
+.ch-tabs{display:flex;background:var(--n-100);border-radius:6px;padding:3px;border:1px solid var(--md-outv)}
+.ch-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;border-radius:5px;border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:500;color:var(--n-500);cursor:pointer;transition:all .2s}
+.ch-tab .material-icons-round{font-size:16px}
+.ch-tab.active{background:var(--md-surf);box-shadow:var(--e1);font-weight:600}
+.ch-tab.t-wa.active{color:#16A34A}
+.ch-tab.t-sms.active{color:var(--cp-600)}
+.ch-tab.t-mail.active{color:var(--c-info)}
+
+/* Info canal */
+.ch-info{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:6px;border:1px solid}
+.ch-info .material-icons-round{font-size:17px;flex-shrink:0;margin-top:1px}
+.ch-info p{font-size:12px;line-height:1.5}
+.ch-info b{font-weight:600}
+.ch-info.wa  {background:#F0FDF4;border-color:#BBF7D0;color:#166534}
+.ch-info.wa .material-icons-round{color:#16A34A}
+.ch-info.sms {background:var(--c-success-bg);border-color:rgba(5,150,105,.25);color:var(--cp-700)}
+.ch-info.sms .material-icons-round{color:var(--cp-500)}
+.ch-info.mail{background:var(--c-info-bg);border-color:rgba(37,99,235,.2);color:#1e40af}
+.ch-info.mail .material-icons-round{color:var(--c-info)}
+
+/* Formulario */
+.fcols{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+@media(max-width:480px){.fcols{grid-template-columns:1fr}}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:11.5px;font-weight:500;color:var(--n-600)}
+.fld input,.fld textarea{background:var(--n-50);border:1.5px solid var(--md-outline);border-radius:6px;padding:9px 11px;color:var(--n-900);font-family:var(--font);font-size:13.5px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.fld input:focus,.fld textarea:focus{border-color:var(--cp-500);box-shadow:0 0 0 3px rgba(5,150,105,.13);background:#fff}
+.fld input::placeholder{color:var(--n-400)}
+.fld textarea{resize:vertical;min-height:76px;font-size:13px;line-height:1.55}
+
+/* Texto del mensaje — predefinido + editable */
+.msg-section{display:flex;flex-direction:column;gap:6px}
+.msg-section-head{display:flex;align-items:center;justify-content:space-between}
+.msg-lbl{font-size:11.5px;font-weight:500;color:var(--n-600)}
+.btn-edit{display:flex;align-items:center;gap:4px;padding:4px 10px;background:none;border:1px solid var(--md-outv);border-radius:100px;color:var(--n-500);font-size:11px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.btn-edit:hover{border-color:var(--cp-300);color:var(--cp-600);background:var(--md-surf3)}
+.btn-edit .material-icons-round{font-size:13px}
+.msg-editor{display:none}
+.prev-box{background:var(--md-surf3);border:1px solid var(--md-outv);border-left:3px solid var(--cp-500);border-radius:6px;padding:11px 13px;display:flex;flex-direction:column;gap:5px}
+.prev-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--cp-600)}
+.prev-msg{font-size:12px;color:var(--n-700);line-height:1.6;white-space:pre-line}
+.prev-url{font-family:var(--mono);font-size:10px;color:var(--c-info);background:var(--c-info-bg);border:1px solid rgba(37,99,235,.18);border-radius:4px;padding:5px 8px;word-break:break-all}
+.prev-meta{font-size:10px;color:var(--n-400);font-family:var(--mono)}
+
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px 18px;border-top:1px solid var(--md-outv);position:sticky;bottom:0;background:var(--md-surf);z-index:1}
+.btn-ghost{padding:9px 16px;background:none;border:none;border-radius:100px;color:var(--n-600);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{background:var(--n-100);color:var(--n-800)}
+.btn-filled{padding:10px 20px;background:var(--cp-500);border:none;border-radius:100px;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(5,150,105,.38);transition:all .2s}
+.btn-filled .material-icons-round{font-size:16px}
+.btn-filled:hover{background:var(--cp-400);box-shadow:0 4px 16px rgba(5,150,105,.48);transform:translateY(-1px)}
+.btn-filled:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-wa{background:#25D366;box-shadow:0 2px 10px rgba(37,211,102,.38)}
+.btn-wa:hover{background:#22C55E;box-shadow:0 4px 16px rgba(37,211,102,.48)}
+
+/* ═══════════════════════════════════════
+   SNACKBARS
+═══════════════════════════════════════ */
+.snrack{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;z-index:999;pointer-events:none}
+.snack{display:flex;align-items:center;gap:9px;background:var(--n-800);color:#fff;border-radius:6px;padding:10px 15px;font-size:12.5px;font-weight:500;box-shadow:var(--e3);min-width:240px;max-width:420px;animation:snkin .3s cubic-bezier(.34,1.56,.64,1);pointer-events:all}
+@keyframes snkin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.snack.out{animation:snkout .22s ease forwards}
+@keyframes snkout{to{opacity:0;transform:translateY(8px)}}
+.snack.success{border-left:3px solid var(--c-success)}
+.snack.warning{border-left:3px solid var(--c-warning)}
+.snack.info   {border-left:3px solid var(--c-info)}
+.snack.error  {border-left:3px solid var(--c-error)}
+</style>
+</head>
+<body>
+
+<!-- ════ TOP APP BAR ════ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-ico"><span class="material-icons-round">videocam</span></div>
+    <div>
+      <div class="brand-name">Teleperitación</div>
+      <div class="brand-sub">Panel del Perito</div>
+    </div>
+  </div>
+
+  <div class="tb-sep desk-only"></div>
+  <div class="tb-chip desk-only">SES&nbsp;<span class="tc-v" id="chip-ses">—</span></div>
+  <div class="tb-chip desk-only">EXP&nbsp;<span class="tc-v" id="chip-exp">—</span></div>
+
+  <div class="timer" id="timer">00:00:00</div>
+  <div class="tb-sep desk-only"></div>
+
+  <div class="s-chip idle" id="schip">
+    <div class="s-dot" id="sdot"></div>
+    <span id="stxt">Sin sesión</span>
+  </div>
+
+  <button class="fab rpl" onclick="openDlg()">
+    <span class="material-icons-round">send</span>
+    <span class="desk-only mob-fab-txt">Enviar enlace</span>
+  </button>
+</header>
+
+<!-- ════ WORKSPACE ════ -->
+<div class="workspace">
+
+  <!-- ── VÍDEO + BOTONES LATERALES (mobile) ── -->
+  <div class="mob-video-row">
+
+    <div class="video-wrap" id="video-wrap">
+      <div class="vid-idle" id="vid-idle">
+        <div class="idle-pat"></div>
+        <div class="idle-ico"><span class="material-icons-round">videocam_off</span></div>
+        <div class="idle-t" id="idle-t">Sin señal de vídeo</div>
+        <div class="idle-s">Envía el enlace al cliente para iniciar la sesión</div>
+      </div>
+      <div id="vid-live"><span>SEÑAL EN DIRECTO</span></div>
+      <div class="vid-ov">
+        <div class="vc tl"></div><div class="vc tr"></div>
+        <div class="vc bl"></div><div class="vc br"></div>
+        <div class="vcross" id="vcross"></div>
+        <div class="vsweep"  id="vsweep"></div>
+        <div class="hud tl" id="htl">RES: 1920×1080<br>FPS: 30</div>
+        <div class="hud tr" id="htr">ZOOM: 1.0×<br>EXP: AUTO</div>
+        <div class="hud bl" id="hbl">LAT: —<br>LNG: —</div>
+        <div class="hud br" id="hbr">BITRATE: —<br>LATENCIA: —</div>
+        <div class="rec-badge" id="recbadge"><div class="rdot"></div>EN DIRECTO</div>
+        <div class="pflash"   id="pflash"></div>
+      </div>
+    </div>
+
+    <!-- Botones laterales — solo visibles en mobile -->
+    <div class="mob-cam-btns mob-only" style="display:none">
+      <button class="mob-cbtn snap" id="mbtn-ph"  onclick="cmd('PHOTO')" disabled title="Capturar foto">
+        <span class="material-icons-round">photo_camera</span>
+      </button>
+      <button class="mob-cbtn"      id="mbtn-cam" onclick="cmd('CAM')"   disabled title="Cambiar cámara">
+        <span class="material-icons-round">flip_camera_android</span>
+      </button>
+      <button class="mob-cbtn"      id="mbtn-fl"  onclick="cmd('FLASH')" disabled title="Flash">
+        <span class="material-icons-round" id="mob-flash-ico">flashlight_on</span>
+      </button>
+      <button class="mob-cbtn stop" id="mbtn-end" onclick="endSession()" disabled title="Finalizar">
+        <span class="material-icons-round">stop_circle</span>
+      </button>
+    </div>
+
+  </div><!-- /mob-video-row -->
+
+  <!-- ── BARRA INFO MÓVIL (SES · EXP · timer) ── -->
+  <div class="mob-info-bar mob-only" style="display:none">
+    <div class="mib-chip">
+      <span class="material-icons-round">tag</span>
+      <span id="mib-ses">—</span>
+    </div>
+    <div class="mib-chip">
+      <span class="material-icons-round">folder_open</span>
+      <span id="mib-exp">—</span>
+    </div>
+    <div class="mib-chip mib-timer">
+      <span class="material-icons-round">schedule</span>
+      <span id="mib-timer">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- ── FILA MEDIA: notas + datos ── -->
+  <div class="mid-row">
+
+    <!-- Notas -->
+    <div class="mob-notes-wrap" style="display:flex;flex-direction:column;border-right:1px solid var(--md-outv);overflow:hidden">
+      <div class="card grow" style="margin:10px 8px 10px 10px">
+        <div class="card-head">
+          <span class="material-icons-round">edit_note</span>
+          <span>Notas del perito</span>
+        </div>
+        <div class="card-body fill">
+          <textarea class="notes" placeholder="Observaciones, daños visibles, zonas a fotografiar…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Datos siniestro -->
+    <div class="mob-data-wrap" style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="card grow" style="margin:10px 10px 10px 8px">
+        <div class="card-head">
+          <span class="material-icons-round">assignment</span>
+          <span>Datos del siniestro</span>
+        </div>
+        <div class="card-body">
+          <div class="dr"><span class="dr-l">Matrícula</span><span class="dr-v green" id="dv-mat">—</span></div>
+          <div class="dr"><span class="dr-l">Cliente</span><span class="dr-v" id="dv-cli">—</span></div>
+          <div class="dr"><span class="dr-l">Teléfono</span><span class="dr-v" id="dv-tel">—</span></div>
+          <div class="dr"><span class="dr-l">Expediente</span><span class="dr-v" id="dv-exp">—</span></div>
+          <div class="dr"><span class="dr-l">Ubicación</span><span class="dr-v blue" id="dv-gps">Pendiente…</span></div>
+          <div class="dr"><span class="dr-l">Precisión</span><span class="dr-v" id="dv-acc">—</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mid-row -->
+
+  <!-- ── GALERÍA ── -->
+  <div class="gallery card" id="gallery-card">
+    <div class="card-head">
+      <span class="material-icons-round">photo_library</span>
+      <span>Galería</span>
+      <!-- chip foto + contador -->
+      <div class="g-count-chip">
+        <span class="material-icons-round">photo_camera</span>
+        <span id="gbadge">0</span>
+      </div>
+      <!-- botón exportar mejorado -->
+      <button class="g-export-btn rpl" onclick="downloadAll()">
+        <span class="material-icons-round">download</span>
+        <span>Exportar</span>
+      </button>
+    </div>
+    <div class="gscroll" id="gscroll">
+      <div class="gempty" id="gempty">
+        <span class="material-icons-round">photo_album</span>
+        Las fotografías aparecerán aquí
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SIDEBAR DESKTOP ════ -->
+  <div class="sidebar">
+
+    <!-- Controles -->
+    <div class="card">
+      <div class="card-head">
+        <span class="material-icons-round">tune</span>
+        <span>Controles</span>
+      </div>
+      <div class="card-body">
+        <div class="cgrid">
+          <button class="cbtn snap rpl" id="btn-ph"  onclick="cmd('PHOTO')" disabled>
+            <span class="material-icons-round">photo_camera</span>
+            <span class="cl">Capturar foto</span>
+          </button>
+          <button class="cbtn rpl"      id="btn-cam" onclick="cmd('CAM')"   disabled>
+            <span class="material-icons-round">flip_camera_android</span>
+            <span class="cl">Cámara</span>
+          </button>
+          <button class="cbtn rpl"      id="btn-fl"  onclick="cmd('FLASH')" disabled>
+            <span class="material-icons-round" id="flash-ico">flashlight_on</span>
+            <span class="cl">Flash</span>
+          </button>
+          <button class="cbtn rpl"      id="btn-zi"  onclick="cmd('ZI')"    disabled>
+            <span class="material-icons-round">zoom_in</span>
+            <span class="cl">Zoom +</span>
+          </button>
+          <button class="cbtn rpl"      id="btn-zo"  onclick="cmd('ZO')"    disabled>
+            <span class="material-icons-round">zoom_out</span>
+            <span class="cl">Zoom −</span>
+          </button>
+          <button class="cbtn stop rpl" id="btn-end" onclick="endSession()" disabled>
+            <span class="material-icons-round">stop_circle</span>
+            <span class="cl">Finalizar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="mapcard card grow">
+      <div class="mbar">
+        <span class="material-icons-round">location_on</span>
+        <span class="mbar-t">GPS</span>
+        <span class="macc" id="macc"></span>
+      </div>
+      <div class="mbody">
+        <div class="mnosig" id="mnosig">
+          <span class="material-icons-round">location_off</span>
+          Esperando GPS…
+        </div>
+        <div class="mgrid" id="mgrid">
+          <div class="mroad-h" style="top:38%;height:7px"></div>
+          <div class="mroad-h" style="top:64%;height:4px"></div>
+          <div class="mroad-v" style="left:34%;width:6px"></div>
+          <div class="mroad-v" style="left:70%;width:3px"></div>
+          <div class="mpin" id="mpin"><div class="mpin-h"></div><div class="mpin-s"></div></div>
+        </div>
+        <div class="mcbar" id="mcbar">
+          <span class="mcv" id="mcv">—</span>
+          <span class="mca" id="mca">—</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+</div><!-- /workspace -->
+
+<!-- ════ DIALOG ════ -->
+<div class="scrim" id="scrim">
+  <div class="dialog">
+    <div class="dlg-head">
+      <div class="dlg-ico"><span class="material-icons-round">send</span></div>
+      <div>
+        <h2>Enviar enlace de sesión</h2>
+        <p>El cliente abre el enlace en su móvil — sin instalar nada</p>
+      </div>
+      <button class="dlg-close rpl" onclick="closeDlg()">
+        <span class="material-icons-round">close</span>
+      </button>
+    </div>
+
+    <div class="dlg-body">
+
+      <!-- Canal -->
+      <div>
+        <div style="font-size:11.5px;font-weight:500;color:var(--n-600);margin-bottom:6px">Canal de envío</div>
+        <div class="ch-tabs">
+          <button class="ch-tab t-wa  active" id="tab-wa"   onclick="setCh('wa')">
+            <span class="material-icons-round">chat</span>WhatsApp
+          </button>
+          <button class="ch-tab t-sms"        id="tab-sms"  onclick="setCh('sms')">
+            <span class="material-icons-round">sms</span>SMS
+          </button>
+          <button class="ch-tab t-mail"       id="tab-mail" onclick="setCh('mail')">
+            <span class="material-icons-round">email</span>Email
+          </button>
+        </div>
+      </div>
+
+      <div class="ch-info wa"   id="ci-wa">
+        <span class="material-icons-round">chat</span>
+        <p>Abre <b>WhatsApp</b> con el mensaje listo. El cliente pulsa el enlace y se conecta — <b>sin instalar nada</b>.</p>
+      </div>
+      <div class="ch-info sms"  id="ci-sms"  style="display:none">
+        <span class="material-icons-round">sms</span>
+        <p>Abre la <b>app SMS</b> de su dispositivo. Para envío automático: API Twilio (~0,04 €/SMS) o del operador corporativo.</p>
+      </div>
+      <div class="ch-info mail" id="ci-mail" style="display:none">
+        <span class="material-icons-round">email</span>
+        <p>Abre su <b>cliente de email</b> con el mensaje preparado. El cliente debe abrir el enlace desde el móvil.</p>
+      </div>
+
+      <!-- Datos -->
+      <div class="fcols">
+        <div class="fld">
+          <label>Teléfono del destinatario *</label>
+          <input type="tel" id="f-phone" placeholder="+34 600 000 000" oninput="updatePrev()">
+        </div>
+        <div class="fld">
+          <label>Matrícula del vehículo</label>
+          <input type="text" id="f-plate" placeholder="1234 ABC" oninput="updatePrev()">
+        </div>
+      </div>
+      <div class="fcols">
+        <div class="fld">
+          <label>Nombre del contacto</label>
+          <input type="text" id="f-name" placeholder="Sr. García / Taller Norte" oninput="updatePrev()">
+        </div>
+        <div class="fld">
+          <label>Nº expediente</label>
+          <input type="text" id="f-exp" placeholder="SIN-2025-XXXXX" oninput="updatePrev()">
+        </div>
+      </div>
+
+      <!-- Texto del mensaje -->
+      <div class="msg-section">
+        <div class="msg-section-head">
+          <span class="msg-lbl">Texto del mensaje</span>
+          <button class="btn-edit rpl" onclick="toggleEdit()">
+            <span class="material-icons-round" id="edit-ico">edit</span>
+            <span id="edit-lbl">Editar</span>
+          </button>
+        </div>
+        <div class="msg-editor fld" id="msg-editor">
+          <textarea id="msg-custom" rows="4" placeholder="Texto personalizado del mensaje…" oninput="updatePrev()"></textarea>
+        </div>
+        <div class="prev-box" id="prev-box">
+          <span class="prev-tag">Vista previa</span>
+          <span class="prev-msg" id="prev-msg">—</span>
+          <span class="prev-url" id="prev-url">—</span>
+          <span class="prev-meta" id="prev-meta">—</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="dlg-foot">
+      <button class="btn-ghost rpl" onclick="closeDlg()">Cancelar</button>
+      <button class="btn-filled btn-wa rpl" id="btn-send" onclick="sendLink()">
+        <span class="material-icons-round" id="send-ico">chat</span>
+        <span id="send-lbl">Enviar por WhatsApp</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="snrack" id="snrack"></div>
+
+<script>
+/* ════ STATE ════ */
+const S = {
+  id: genId(), connected:false, tick:null, t0:null,
+  photos:0, zoom:1.0, flash:false, ch:'wa', editing:false,
+  photoData:[]   // almacena {id, dataURL, ts} para exportar
+};
+const pad = n => String(n).padStart(2,'0');
+function genId(){ return 'SES-'+Date.now().toString(36).toUpperCase().slice(-6) }
+
+/* ══ TEXTOS PREDEFINIDOS ══ */
+const TPL = {
+  wa: (n,p,e) =>
+`Hola ${n||'👋'}
+
+Le contactamos para iniciar la peritación remota del vehículo${p?' *'+p+'*':''}.
+
+Pulse el enlace desde su móvil para conectarse con su perito. No necesita instalar ninguna aplicación, solo abrir el enlace.
+
+${e?'Expediente: '+e+'\n':''}📲 Enlace de acceso:`,
+  sms: (n,p,e) =>
+`Peritación remota${p?' veh. '+p:''}. ${n||'Estimado/a cliente'}, pulse el enlace para conectar con su perito${e?' (Exp. '+e+')':''}: `,
+  mail: (n,p,e) =>
+`Estimado/a ${n||'cliente'},
+
+Le escribimos para coordinar la peritación telemática${p?' del vehículo '+p:''}.${e?'\nExpediente: '+e:''}
+
+Por favor, acceda al siguiente enlace desde su teléfono móvil para conectarse con su perito asignado. No necesita instalar ninguna aplicación.
+
+Enlace de acceso:`,
+};
+
+/* ════ INIT ════ */
+document.getElementById('chip-ses').textContent = S.id;
+document.getElementById('mib-ses').textContent  = S.id;
+updatePrev();
+
+/* ════ TIMER ════ */
+function startTimer(){
+  S.t0 = Date.now();
+  S.tick = setInterval(()=>{
+    const s = Math.floor((Date.now()-S.t0)/1000);
+    const txt = `${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%60)}`;
+    const el = document.getElementById('timer');
+    el.textContent = txt; el.classList.add('on');
+    // Barra móvil
+    const mt = document.getElementById('mib-timer');
+    if(mt){ mt.textContent = txt; mt.parentElement?.classList.add('on'); }
+  },1000);
+}
+
+/* ════ STATUS ════ */
+function setStatus(m){
+  const labels={idle:'Sin sesión',wait:'Esperando…',live:'Conectado',ended:'Finalizado'};
+  document.getElementById('schip').className='s-chip '+m;
+  document.getElementById('sdot').className='s-dot'+(m==='live'||m==='wait'?' pulse':'');
+  document.getElementById('stxt').textContent=labels[m];
+}
+
+/* ════ DIALOG ════ */
+function openDlg(){
+  document.getElementById('scrim').classList.add('open');
+  setTimeout(()=>document.getElementById('f-phone').focus(),120);
+  updatePrev();
+}
+function closeDlg(){ document.getElementById('scrim').classList.remove('open') }
+document.getElementById('scrim').addEventListener('click',e=>{ if(e.target===document.getElementById('scrim'))closeDlg() });
+
+/* ════ CANAL ════ */
+function setCh(ch){
+  S.ch=ch;
+  ['wa','sms','mail'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===ch);
+    const ci=document.getElementById('ci-'+t);
+    if(ci)ci.style.display=t===ch?'flex':'none';
+  });
+  const cfg={
+    wa:  {ico:'chat', lbl:'Enviar por WhatsApp',cls:'btn-filled btn-wa rpl'},
+    sms: {ico:'sms',  lbl:'Enviar por SMS',     cls:'btn-filled rpl'},
+    mail:{ico:'email',lbl:'Enviar por Email',    cls:'btn-filled rpl'},
+  };
+  const c=cfg[ch];
+  document.getElementById('btn-send').className=c.cls;
+  document.getElementById('send-ico').textContent=c.ico;
+  document.getElementById('send-lbl').textContent=c.lbl;
+  if(S.editing){ document.getElementById('msg-custom').value=getTpl(); }
+  updatePrev();
+}
+
+/* ════ TEXTO PREDEFINIDO ════ */
+function getTpl(){
+  const n=document.getElementById('f-name')?.value||'';
+  const p=document.getElementById('f-plate')?.value||'';
+  const e=document.getElementById('f-exp')?.value||'';
+  return TPL[S.ch](n,p,e);
+}
+function toggleEdit(){
+  S.editing=!S.editing;
+  document.getElementById('msg-editor').style.display=S.editing?'block':'none';
+  document.getElementById('edit-ico').textContent=S.editing?'visibility':'edit';
+  document.getElementById('edit-lbl').textContent=S.editing?'Ver vista previa':'Editar';
+  if(S.editing) document.getElementById('msg-custom').value=getTpl();
+  updatePrev();
+}
+
+/* ════ URL + PREVIEW ════ */
+function buildURL(){
+  const base=window.location.origin+window.location.pathname.replace('perito.html','cliente.html');
+  return base+'?s='+S.id+'&p='+encodeURIComponent(document.getElementById('f-plate')?.value||'')+'&e='+encodeURIComponent(document.getElementById('f-exp')?.value||'');
+}
+function updatePrev(){
+  const url=buildURL();
+  const body=S.editing?(document.getElementById('msg-custom')?.value||getTpl()):getTpl();
+  const total=body.length+url.length+2;
+  document.getElementById('prev-msg').textContent=body;
+  document.getElementById('prev-url').textContent=url;
+  document.getElementById('prev-meta').textContent=
+    S.ch==='sms'?`${total} car. · ${Math.ceil(total/160)} SMS`:
+    S.ch==='wa'?`WhatsApp · el cliente no necesita instalar nada`:
+    `${total} caracteres · email`;
+}
+
+/* ════ ENVIAR ════ */
+function sendLink(){
+  const phone=document.getElementById('f-phone').value.trim();
+  if(!phone){ snack('Introduce el número de teléfono','warning'); return }
+  const name=document.getElementById('f-name').value.trim();
+  const plate=document.getElementById('f-plate').value.trim();
+  const exp=document.getElementById('f-exp').value.trim();
+  const url=buildURL();
+  const body=document.getElementById('prev-msg').textContent;
+  const full=body+'\n'+url;
+  const clean=phone.replace(/\D/g,'');
+
+  if(plate) document.getElementById('dv-mat').textContent=plate;
+  if(name)  document.getElementById('dv-cli').textContent=name;
+  document.getElementById('dv-tel').textContent=phone;
+  document.getElementById('dv-exp').textContent=exp||'—';
+  document.getElementById('chip-exp').textContent=exp||'—';
+  // Actualizar barra móvil
+  const me = document.getElementById('mib-exp');
+  if(me) me.textContent = exp||'—';
+
+  const urls={
+    wa:   `https://wa.me/${clean}?text=${encodeURIComponent(full)}`,
+    sms:  `sms:${phone}?body=${encodeURIComponent(full)}`,
+    mail: `mailto:?subject=${encodeURIComponent('Peritación telemática'+(plate?' – '+plate:''))}&body=${encodeURIComponent(full)}`,
+  };
+  window.open(urls[S.ch],'_blank');
+
+  closeDlg();
+  setStatus('wait');
+  snack('Enlace enviado por '+{wa:'WhatsApp',sms:'SMS',mail:'Email'}[S.ch],'success');
+  setTimeout(()=>clientConnect(phone,plate),4000);
+}
+
+/* ════ CLIENTE CONECTADO ════ */
+function clientConnect(phone,plate){
+  S.connected=true;
+  startTimer();setStatus('live');
+  document.getElementById('vid-idle').style.display='none';
+  const vl=document.getElementById('vid-live');vl.style.display='flex';
+  document.getElementById('vcross').classList.add('show');
+  document.getElementById('vsweep').classList.add('show');
+  document.getElementById('recbadge').classList.add('show');
+  ['htl','htr','hbl','hbr'].forEach(id=>document.getElementById(id).classList.add('show'));
+  ['btn-ph','btn-cam','btn-fl','btn-zi','btn-zo','btn-end']
+    .forEach(id=>document.getElementById(id).disabled=false);
+  ['mbtn-ph','mbtn-cam','mbtn-fl','mbtn-end']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=false; });
+  snack('Cliente conectado — sesión activa','success');
+  setTimeout(()=>showGPS(40.41650,-3.70380,'±4m'),1200);
+  setTimeout(()=>takePhoto(),5000);
+}
+
+/* ════ GPS ════ */
+function showGPS(lat,lng,acc){
+  document.getElementById('dv-gps').textContent=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  document.getElementById('dv-acc').textContent=acc;
+  document.getElementById('macc').textContent=acc;
+  document.getElementById('mcv').textContent=`${lat.toFixed(5)}° N · ${Math.abs(lng).toFixed(5)}° O`;
+  document.getElementById('mca').textContent='Calle Mayor, 28013 Madrid';
+  document.getElementById('mnosig').style.display='none';
+  document.getElementById('mgrid').style.display='block';
+  document.getElementById('mpin').classList.add('show');
+  document.getElementById('mcbar').classList.add('show');
+  document.getElementById('hbl').innerHTML=`LAT: ${lat.toFixed(5)}<br>LNG: ${lng.toFixed(5)}`;
+  document.getElementById('hbr').innerHTML=`BITRATE: 2.4 Mbps<br>LATENCIA: 38ms`;
+}
+
+/* ════ COMANDOS ════ */
+const PAL=[['#E4F1ED','#ADE1D1'],['#ADE1D1','#63D9B4'],['#63D9B4','#0FB280'],['#0FB280','#059669'],['#059669','#0A7151']];
+function cmd(c){
+  if(!S.connected){snack('Sin conexión activa','warning');return}
+  if(c==='PHOTO'){takePhoto();snack('Capturando fotografía…','info');return}
+  if(c==='FLASH'){
+    S.flash=!S.flash;
+    document.getElementById('flash-ico').textContent=S.flash?'flashlight_off':'flashlight_on';
+    const mfi=document.getElementById('mob-flash-ico');
+    if(mfi) mfi.textContent=S.flash?'flashlight_off':'flashlight_on';
+    snack(S.flash?'Flash activado':'Flash desactivado','info');return;
+  }
+  if(c==='ZI'){S.zoom=Math.min(8,+(S.zoom+.5).toFixed(1));document.getElementById('htr').innerHTML=`ZOOM: ${S.zoom.toFixed(1)}×<br>EXP: AUTO`;snack(`Zoom: ${S.zoom.toFixed(1)}×`,'info');return}
+  if(c==='ZO'){S.zoom=Math.max(1,+(S.zoom-.5).toFixed(1));document.getElementById('htr').innerHTML=`ZOOM: ${S.zoom.toFixed(1)}×<br>EXP: AUTO`;snack(`Zoom: ${S.zoom.toFixed(1)}×`,'info');return}
+  if(c==='CAM'){snack('Cámara cambiada','info');return}
+}
+
+/* ════ FOTO — con botón eliminar ════ */
+function takePhoto(){
+  if(!S.connected)return;
+  S.photos++;
+  const photoId = 'ph-'+S.photos;
+
+  const fl=document.getElementById('pflash');fl.classList.add('on');setTimeout(()=>fl.classList.remove('on'),110);
+  document.getElementById('gbadge').textContent=S.photos;
+
+  // Datos de la foto (en producción: imagen real via WebRTC)
+  const [c1,c2]=PAL[(S.photos-1)%PAL.length];
+  const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  S.photoData.push({id:photoId, gradient:[c1,c2], ts, num:S.photos});
+
+  renderGallery();
+  snack(`Foto #${pad(S.photos)} capturada`,'success');
+}
+
+function deletePhoto(photoId){
+  const idx = S.photoData.findIndex(p=>p.id===photoId);
+  if(idx===-1)return;
+  const num = S.photoData[idx].num;
+  S.photoData.splice(idx,1);
+  S.photos = S.photoData.length;
+  document.getElementById('gbadge').textContent = S.photos;
+  renderGallery();
+  snack(`Foto #${pad(num)} eliminada`,'warning');
+}
+
+function renderGallery(){
+  const strip=document.getElementById('gscroll');
+  if(S.photoData.length===0){
+    strip.innerHTML='<div class="gempty" id="gempty"><span class="material-icons-round">photo_album</span>Las fotografías aparecerán aquí</div>';
+    return;
+  }
+  strip.innerHTML='';
+  S.photoData.forEach(p=>{
+    const t=document.createElement('div');
+    t.className='thumb tin';
+    t.id=p.id;
+    t.style.background=`linear-gradient(135deg,${p.gradient[0]},${p.gradient[1]})`;
+    t.innerHTML=`
+      <span class="material-icons-round" style="font-size:24px;color:rgba(9,82,60,.3)">directions_car</span>
+      <div class="tlbl">#${pad(p.num)} · ${p.ts}</div>
+      <button class="thumb-del" onclick="event.stopPropagation();deletePhoto('${p.id}')" title="Eliminar foto">
+        <span class="material-icons-round">close</span>
+      </button>`;
+    t.onclick=()=>snack(`Foto #${pad(p.num)} — ${p.ts}`,'info');
+    strip.appendChild(t);
+  });
+  strip.scrollLeft=strip.scrollWidth;
+}
+
+/* ════ EXPORTAR como ZIP ════ */
+async function downloadAll(){
+  if(!S.photoData.length){snack('No hay fotografías para exportar','warning');return}
+  snack('Preparando archivo ZIP…','info');
+
+  try {
+    // Cargamos JSZip dinámicamente
+    if(!window.JSZip){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload=res;s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
+    const zip = new JSZip();
+    const folder = zip.folder(`sesion_${S.id}`);
+
+    // Por cada foto generamos un canvas con el gradiente (demo sin WebRTC real)
+    // En producción aquí irían los dataURL reales de los frames capturados
+    for(const p of S.photoData){
+      const canvas=document.createElement('canvas');
+      canvas.width=800;canvas.height=600;
+      const ctx=canvas.getContext('2d');
+      const grad=ctx.createLinearGradient(0,0,800,600);
+      grad.addColorStop(0,p.gradient[0]);
+      grad.addColorStop(1,p.gradient[1]);
+      ctx.fillStyle=grad;ctx.fillRect(0,0,800,600);
+      // Texto info
+      ctx.fillStyle='rgba(9,82,60,0.5)';
+      ctx.font='bold 32px sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(`Foto #${pad(p.num)}`,400,280);
+      ctx.font='20px monospace';
+      ctx.fillText(p.ts,400,320);
+      ctx.fillText(`Sesión: ${S.id}`,400,360);
+
+      const dataURL=canvas.toDataURL('image/jpeg',0.9);
+      const base64=dataURL.split(',')[1];
+      folder.file(`foto_${pad(p.num)}_${p.ts.replace(/:/g,'-')}.jpg`,base64,{base64:true});
+    }
+
+    // Añadir informe resumen
+    const resumen=`INFORME DE SESIÓN\n${'='.repeat(40)}\nSesión: ${S.id}\nExpediente: ${document.getElementById('dv-exp').textContent}\nCliente: ${document.getElementById('dv-cli').textContent}\nMatrícula: ${document.getElementById('dv-mat').textContent}\nTeléfono: ${document.getElementById('dv-tel').textContent}\nUbicación: ${document.getElementById('dv-gps').textContent}\nTotal fotos: ${S.photoData.length}\nNotas: ${document.querySelector('.notes')?.value||''}\nGenerado: ${new Date().toLocaleString('es-ES')}`;
+    folder.file('informe.txt',resumen);
+
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`teleperitacion_${S.id}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    snack(`ZIP descargado — ${S.photoData.length} foto${S.photoData.length!==1?'s':''} + informe`,'success');
+  } catch(e){
+    console.error(e);
+    snack('Error al generar el ZIP','error');
+  }
+}
+
+function endSession(){
+  if(!confirm('¿Finalizar la sesión?\nEsta acción desconectará al cliente.'))return;
+  S.connected=false;clearInterval(S.tick);setStatus('ended');
+  document.getElementById('vid-live').style.display='none';
+  document.getElementById('vid-idle').style.display='flex';
+  document.getElementById('idle-t').textContent='Sesión finalizada';
+  ['recbadge','vcross','vsweep'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  ['btn-ph','btn-cam','btn-fl','btn-zi','btn-zo','btn-end'].forEach(id=>document.getElementById(id).disabled=true);
+  ['mbtn-ph','mbtn-cam','mbtn-fl','mbtn-end'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=true; });
+  snack(`Sesión finalizada · ${S.photoData.length} foto${S.photoData.length!==1?'s':''} capturada${S.photoData.length!==1?'s':''}`,'info');
+}
+
+/* ════ SNACKBAR ════ */
+function snack(msg,type='info'){
+  const icons={success:'check_circle',warning:'warning',info:'info',error:'error'};
+  const colors={success:'var(--c-success)',warning:'var(--c-warning)',info:'var(--c-info)',error:'var(--c-error)'};
+  const el=document.createElement('div');
+  el.className=`snack ${type}`;
+  el.innerHTML=`<span class="material-icons-round" style="font-size:17px;color:${colors[type]}">${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('snrack').appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),230)},3400);
+}
+
+/* ════ TECLADO ════ */
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+  if(e.key===' '||e.key==='p'){e.preventDefault();cmd('PHOTO')}
+  if(e.key==='f')cmd('FLASH');
+  if(e.key==='c')cmd('CAM');
+  if(e.key==='+'||e.key==='=')cmd('ZI');
+  if(e.key==='-')cmd('ZO');
+  if(e.key==='l'||e.key==='L')openDlg();
+});
+</script>
+</body>
+</html>

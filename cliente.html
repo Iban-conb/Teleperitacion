@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Teleperitación</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<style>
+/* ══ TOKENS ══ */
+:root{
+  --cp-50:#E4F1ED;  --cp-100:#ADE1D1; --cp-200:#63D9B4;
+  --cp-300:#1FD69D; --cp-400:#0FB280; --cp-500:#059669;
+  --cp-600:#0A7151; --cp-700:#09523C; --cp-800:#083627; --cp-900:#051E17;
+  --c-error:#DC2626; --c-error-bg:rgba(220,38,38,.1);
+  --c-warn:#D97706;  --c-warn-bg:rgba(217,119,6,.1);
+  --c-info:#2563EB;  --c-info-bg:rgba(37,99,235,.09);
+  --n-50:#F6F7F8; --n-100:#F3F4F6; --n-200:#E5E7EB; --n-300:#D1D5DB;
+  --n-400:#9CA3AF; --n-500:#6B7280; --n-600:#4B5563;
+  --n-700:#374151; --n-800:#1F2937; --n-900:#111827;
+  --md-bg:#F6F7F8; --md-surf:#FFFFFF; --md-surf2:#F3F4F6;
+  --md-surf3:#E9F5F1; --md-outline:#D1D5DB; --md-outline-v:#E5E7EB;
+  --elev1:0 1px 3px rgba(16,24,40,.07),0 1px 2px rgba(16,24,40,.04);
+  --elev2:0 4px 10px rgba(16,24,40,.08),0 2px 4px rgba(16,24,40,.04);
+  --elev3:0 8px 24px rgba(16,24,40,.09),0 4px 8px rgba(16,24,40,.04);
+  --r-sm:8px; --r:12px; --r-md:16px; --r-lg:20px; --r-xl:28px;
+  --font:'Roboto',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  font-family:var(--font);font-size:15px;background:var(--md-bg);
+  color:var(--n-800);line-height:1.45;
+  min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden
+}
+
+/* ══ SCREENS ══ */
+.screen{display:none;flex-direction:column;min-height:100dvh;animation:fadeUp .35s ease}
+.screen.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ SCREEN 1: BIENVENIDA ══ */
+#scr-welcome{background:var(--md-bg)}
+
+/* Hero */
+.hero{
+  background:var(--md-surf);padding:32px 24px 24px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;
+  border-bottom:1px solid var(--md-outline-v)
+}
+.hero-logo{
+  width:64px;height:64px;border-radius:20px;background:var(--cp-500);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(5,150,105,.38)
+}
+.hero-logo .material-icons-round{font-size:34px;color:#fff}
+.hero h1{font-size:22px;font-weight:700;color:var(--n-900);line-height:1.2}
+.hero h1 span{color:var(--cp-500)}
+.hero p{font-size:14px;color:var(--n-500);line-height:1.6;max-width:300px}
+
+/* Indicador sesión */
+.ses-badge{
+  display:flex;align-items:center;gap:7px;
+  background:var(--md-surf3);border:1px solid rgba(5,150,105,.25);
+  border-radius:100px;padding:6px 14px;
+  font-size:12px;color:var(--cp-700);font-weight:500
+}
+.ses-dot{width:7px;height:7px;border-radius:50%;background:var(--cp-500);animation:sdot 2s infinite}
+@keyframes sdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+
+/* Pasos */
+.steps-section{padding:20px 16px 8px}
+.steps-title{
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--n-400);margin-bottom:14px;padding:0 4px
+}
+.step-card{
+  background:var(--md-surf);border:1px solid var(--md-outline-v);border-radius:var(--r-md);
+  padding:16px;display:flex;align-items:flex-start;gap:14px;margin-bottom:10px;
+  box-shadow:var(--elev1);transition:border-color .3s,box-shadow .3s
+}
+.step-card.done{border-color:rgba(5,150,105,.35);background:linear-gradient(135deg,#fff,#f5fdf9)}
+.step-num{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:var(--cp-50);border:1.5px solid rgba(5,150,105,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;color:var(--cp-600);transition:all .3s
+}
+.step-card.done .step-num{background:var(--cp-500);border-color:var(--cp-500)}
+.step-card.done .step-num .material-icons-round{font-size:18px;color:#fff}
+.step-body{flex:1}
+.step-body strong{font-size:14px;font-weight:600;color:var(--n-800);display:block;margin-bottom:3px}
+.step-body p{font-size:13px;color:var(--n-500);line-height:1.5}
+
+/* Botón principal */
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:calc(100% - 32px);margin:16px auto 24px;
+  padding:17px;background:var(--cp-500);color:#fff;border:none;border-radius:100px;
+  font-family:var(--font);font-size:16px;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 20px rgba(5,150,105,.42);transition:all .2s;letter-spacing:.01em
+}
+.btn-primary .material-icons-round{font-size:20px}
+.btn-primary:active{transform:scale(.97);box-shadow:0 2px 10px rgba(5,150,105,.32)}
+
+/* ══ SCREEN 2: PERMISOS ══ */
+#scr-perms{background:var(--md-bg);padding:0}
+
+.perms-hero{
+  background:var(--md-surf);padding:32px 24px 24px;text-align:center;
+  border-bottom:1px solid var(--md-outline-v)
+}
+.perms-hero .phi{
+  width:56px;height:56px;border-radius:18px;background:var(--c-info-bg);
+  border:1px solid rgba(37,99,235,.2);margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center
+}
+.perms-hero .phi .material-icons-round{font-size:28px;color:var(--c-info)}
+.perms-hero h2{font-size:20px;font-weight:700;color:var(--n-900);margin-bottom:6px}
+.perms-hero p{font-size:13px;color:var(--n-500);line-height:1.6;max-width:280px;margin:0 auto}
+
+.perms-list{padding:16px;display:flex;flex-direction:column;gap:10px;flex:1}
+
+.perm-card{
+  background:var(--md-surf);border:1.5px solid var(--md-outline-v);border-radius:var(--r-md);
+  padding:16px;display:flex;align-items:center;gap:14px;
+  box-shadow:var(--elev1);transition:all .3s
+}
+.perm-card.granted{border-color:rgba(5,150,105,.4);background:linear-gradient(135deg,#fff,#f3fdf8)}
+.perm-card.denied {border-color:rgba(220,38,38,.35);background:var(--c-error-bg)}
+
+.perm-icon{
+  width:48px;height:48px;border-radius:14px;flex-shrink:0;
+  background:var(--n-100);border:1px solid var(--md-outline-v);
+  display:flex;align-items:center;justify-content:center;transition:all .3s
+}
+.perm-card.granted .perm-icon{background:var(--cp-50);border-color:rgba(5,150,105,.22)}
+.perm-card.denied  .perm-icon{background:var(--c-error-bg);border-color:rgba(220,38,38,.22)}
+.perm-icon .material-icons-round{font-size:24px;color:var(--n-400);transition:color .3s}
+.perm-card.granted .perm-icon .material-icons-round{color:var(--cp-500)}
+.perm-card.denied  .perm-icon .material-icons-round{color:var(--c-error)}
+
+.perm-info{flex:1}
+.perm-info strong{font-size:14px;font-weight:600;color:var(--n-800);display:block;margin-bottom:2px}
+.perm-info p{font-size:12px;color:var(--n-500);line-height:1.4}
+
+.perm-status{font-size:20px;flex-shrink:0}
+
+.perm-note{
+  margin:0 16px;padding:12px 14px;
+  background:var(--c-info-bg);border:1px solid rgba(37,99,235,.18);
+  border-radius:var(--r-sm);
+  display:flex;align-items:flex-start;gap:8px;
+}
+.perm-note .material-icons-round{font-size:18px;color:var(--c-info);flex-shrink:0;margin-top:1px}
+.perm-note p{font-size:12px;color:var(--n-700);line-height:1.5}
+
+/* ══ SCREEN 3: CÁMARA ══ */
+#scr-cam{background:#000;padding:0;position:relative}
+
+#video-el{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block
+}
+
+.cam-overlay{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:space-between;pointer-events:none;z-index:2
+}
+
+/* Barra superior */
+.cam-top{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:env(safe-area-inset-top,16px) 16px 12px;
+  padding-top:max(env(safe-area-inset-top),16px);
+  background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);
+  pointer-events:all
+}
+.cam-rec{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(220,38,38,.92);border-radius:100px;
+  padding:5px 14px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.04em
+}
+.rdot{width:7px;height:7px;border-radius:50%;background:#fff;animation:rd 1s infinite}
+@keyframes rd{0%,100%{opacity:1}50%{opacity:.2}}
+.cam-ses{
+  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.15);border-radius:100px;
+  padding:5px 12px;font-size:10px;color:rgba(255,255,255,.75);
+  font-family:'Roboto Mono',monospace
+}
+
+/* Guía encuadre */
+.cam-guide{
+  margin:0 20px;flex:1;max-height:52vh;
+  border:1.5px dashed rgba(255,255,255,.28);border-radius:10px;
+  position:relative;display:flex;align-items:center;justify-content:center
+}
+.cam-guide-text{
+  background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border-radius:100px;
+  padding:5px 14px;font-size:11px;color:rgba(255,255,255,.75);
+  position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);
+  white-space:nowrap
+}
+
+/* Esquinas verdes */
+.gc{position:absolute;width:22px;height:22px;border-color:var(--cp-300);border-style:solid;opacity:.8}
+.gc.tl{top:12px;left:12px;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
+.gc.tr{top:12px;right:12px;border-width:2px 2px 0 0;border-radius:0 2px 0 0}
+.gc.bl{bottom:12px;left:12px;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
+.gc.br{bottom:12px;right:12px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
+
+/* Estado conexión */
+.cam-status{
+  margin:0 16px 6px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm);
+  padding:10px 14px;display:flex;align-items:center;gap:10px;pointer-events:all
+}
+.cs-dot{width:9px;height:9px;border-radius:50%;background:var(--c-warn);flex-shrink:0;transition:background .4s}
+.cs-dot.live{background:var(--cp-300);animation:sdot 2s infinite}
+.cs-text{font-size:13px;color:rgba(255,255,255,.85);font-weight:500}
+.cs-count{margin-left:auto;font-size:12px;color:rgba(255,255,255,.5);font-family:'Roboto Mono',monospace}
+
+/* Barra inferior */
+.cam-bottom{
+  display:flex;justify-content:space-around;align-items:center;
+  padding:12px 20px;padding-bottom:max(env(safe-area-inset-bottom),16px);
+  background:linear-gradient(to top,rgba(0,0,0,.7),transparent);
+  pointer-events:all
+}
+.cam-btn{
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;color:#fff
+}
+.cam-btn .material-icons-round{font-size:22px;color:#fff}
+.cam-btn:active{transform:scale(.9);background:rgba(255,255,255,.25)}
+
+/* Flash captura */
+.cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:10;transition:opacity .04s}
+.cam-flash.on{opacity:1}
+
+/* Aviso orientación */
+.orient-warn{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:var(--md-surf);flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:32px;text-align:center
+}
+.orient-warn.show{display:flex}
+.ow-icon{font-size:64px;animation:owrot 1.2s ease infinite alternate}
+@keyframes owrot{from{transform:rotate(0deg)}to{transform:rotate(-90deg)}}
+.orient-warn h2{font-size:20px;font-weight:700;color:var(--n-800)}
+.orient-warn p{font-size:14px;color:var(--n-500);line-height:1.6}
+
+/* ══ TOAST ══ */
+.toast{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-60px);
+  background:var(--n-800);color:#fff;border-radius:var(--r-sm);
+  padding:11px 18px;font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:var(--elev3);opacity:0;
+  transition:all .32s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;z-index:200;pointer-events:none
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.success{border-left:3px solid var(--cp-400)}
+.toast.warning{border-left:3px solid var(--c-warn)}
+.toast.error  {border-left:3px solid var(--c-error)}
+.toast .material-icons-round{font-size:17px}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     PANTALLA 1: BIENVENIDA
+══════════════════════════════════ -->
+<section class="screen active" id="scr-welcome">
+
+  <div class="hero">
+    <div class="hero-logo">
+      <span class="material-icons-round">videocam</span>
+    </div>
+    <div class="ses-badge">
+      <div class="ses-dot"></div>
+      <span id="ses-label">Sesión activa</span>
+    </div>
+    <h1>Peritación<br>de su vehículo<br><span>en remoto</span></h1>
+    <p>Un perito profesional revisará su vehículo en directo a través de la cámara de su teléfono. Solo le llevará unos minutos.</p>
+  </div>
+
+  <div class="steps-section">
+    <div class="steps-title">¿Cómo funciona?</div>
+
+    <div class="step-card" id="step1">
+      <div class="step-num"><span>1</span></div>
+      <div class="step-body">
+        <strong>Acepte los permisos</strong>
+        <p>Necesitamos acceso a cámara, micrófono y ubicación para realizar la peritación.</p>
+      </div>
+    </div>
+
+    <div class="step-card" id="step2">
+      <div class="step-num"><span>2</span></div>
+      <div class="step-body">
+        <strong>Gire el teléfono en horizontal</strong>
+        <p>Posición horizontal para capturar mejor todo el vehículo.</p>
+      </div>
+    </div>
+
+    <div class="step-card" id="step3">
+      <div class="step-num"><span>3</span></div>
+      <div class="step-body">
+        <strong>Siga las instrucciones del perito</strong>
+        <p>El perito controlará la sesión y le indicará qué zonas enfocar.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="goPerms()">
+    <span class="material-icons-round">arrow_forward</span>
+    Comenzar peritación
+  </button>
+
+</section>
+
+
+<!-- ══════════════════════════════════
+     PANTALLA 2: PERMISOS
+══════════════════════════════════ -->
+<section class="screen" id="scr-perms">
+
+  <div class="perms-hero">
+    <div class="phi"><span class="material-icons-round">lock_open</span></div>
+    <h2>Necesitamos su permiso</h2>
+    <p>Para realizar la peritación remota necesitamos acceder a los siguientes servicios de su dispositivo.</p>
+  </div>
+
+  <div class="perms-list">
+
+    <div class="perm-card" id="pc-cam">
+      <div class="perm-icon"><span class="material-icons-round">videocam</span></div>
+      <div class="perm-info">
+        <strong>Cámara</strong>
+        <p>Para que el perito vea el vehículo en directo</p>
+      </div>
+      <span class="perm-status" id="ps-cam">⏳</span>
+    </div>
+
+    <div class="perm-card" id="pc-mic">
+      <div class="perm-icon"><span class="material-icons-round">mic</span></div>
+      <div class="perm-info">
+        <strong>Micrófono</strong>
+        <p>Para comunicación de audio durante la sesión</p>
+      </div>
+      <span class="perm-status" id="ps-mic">⏳</span>
+    </div>
+
+    <div class="perm-card" id="pc-loc">
+      <div class="perm-icon"><span class="material-icons-round">location_on</span></div>
+      <div class="perm-info">
+        <strong>Ubicación</strong>
+        <p>Para registrar dónde se encuentra el vehículo</p>
+      </div>
+      <span class="perm-status" id="ps-loc">⏳</span>
+    </div>
+
+    <div class="perm-note">
+      <span class="material-icons-round">info</span>
+      <p>Sus datos solo se utilizan durante esta sesión de peritación y no se almacenan en ningún servidor externo.</p>
+    </div>
+
+  </div>
+
+  <button class="btn-primary" id="btn-perms" onclick="requestPerms()">
+    <span class="material-icons-round">check_circle</span>
+    Conceder permisos y continuar
+  </button>
+
+</section>
+
+
+<!-- ══════════════════════════════════
+     PANTALLA 3: CÁMARA ACTIVA
+══════════════════════════════════ -->
+<section class="screen" id="scr-cam">
+
+  <video id="video-el" autoplay playsinline muted></video>
+
+  <div class="cam-overlay">
+
+    <!-- Top -->
+    <div class="cam-top">
+      <div class="cam-rec" id="cam-rec" style="opacity:0">
+        <div class="rdot"></div>EN DIRECTO
+      </div>
+      <div class="cam-ses" id="cam-ses-id">SES-000000</div>
+    </div>
+
+    <!-- Guía encuadre -->
+    <div class="cam-guide">
+      <div class="gc tl"></div><div class="gc tr"></div>
+      <div class="gc bl"></div><div class="gc br"></div>
+      <div class="cam-guide-text">↔ Mantenga el teléfono en horizontal</div>
+    </div>
+
+    <!-- Estado -->
+    <div class="cam-status">
+      <div class="cs-dot" id="cs-dot"></div>
+      <span class="cs-text" id="cs-text">Esperando conexión del perito…</span>
+      <span class="cs-count" id="cs-count">0 fotos</span>
+    </div>
+
+    <!-- Botones -->
+    <div class="cam-bottom">
+      <div class="cam-btn rpl" onclick="switchCam()" title="Cambiar cámara">
+        <span class="material-icons-round">flip_camera_android</span>
+      </div>
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(5,150,105,.25);border:3px solid var(--cp-300);display:flex;align-items:center;justify-content:center;">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.3);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
+          <span class="material-icons-round" style="font-size:28px;color:rgba(255,255,255,.5)">videocam</span>
+        </div>
+      </div>
+      <div class="cam-btn rpl" id="flash-btn" onclick="toggleFlash()" title="Flash">
+        <span class="material-icons-round" id="flash-ico">flashlight_on</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="cam-flash" id="cam-flash"></div>
+
+</section>
+
+<!-- AVISO ORIENTACIÓN -->
+<div class="orient-warn" id="ow">
+  <span class="ow-icon">📱</span>
+  <h2>Gire el teléfono</h2>
+  <p>Para una mejor peritación, coloque el móvil en posición <strong>horizontal</strong>.</p>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="material-icons-round" id="toast-ico">info</span>
+  <span id="toast-msg">—</span>
+</div>
+
+<script>
+// ══ STATE ══
+let stream = null;
+let facingMode = 'environment';
+let flashOn = false;
+let photoCount = 0;
+let connected = false;
+
+// Leer parámetros de la URL (enviados desde el panel del perito)
+const params = new URLSearchParams(window.location.search);
+const SESSION_ID = params.get('s') || 'SES-' + Math.random().toString(36).substr(2,6).toUpperCase();
+const PLATE      = params.get('p') || '';
+const EXP        = params.get('e') || '';
+
+// ══ INIT ══
+document.getElementById('ses-label').textContent = SESSION_ID;
+if(PLATE) document.getElementById('ses-label').textContent = SESSION_ID + ' · ' + PLATE;
+
+// ══ NAVEGACIÓN ══
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goPerms(){
+  markStep(1);
+  goScreen('scr-perms');
+}
+
+function markStep(n){
+  const el = document.getElementById('step'+n);
+  if(!el) return;
+  el.classList.add('done');
+  el.querySelector('.step-num').innerHTML='<span class="material-icons-round">check</span>';
+}
+
+// ══ PERMISOS ══
+async function requestPerms(){
+  const btn = document.getElementById('btn-perms');
+  btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> Solicitando permisos…';
+  btn.disabled = true;
+
+  // — Cámara + Micrófono
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode, width:{ideal:1920}, height:{ideal:1080} },
+      audio: true
+    });
+    setPermStatus('cam', true);
+    setPermStatus('mic', true);
+    showToast('Cámara y micrófono concedidos', 'success');
+  } catch(e){
+    setPermStatus('cam', false);
+    setPermStatus('mic', false);
+    showToast('Necesita conceder acceso a la cámara', 'error');
+    btn.innerHTML = '<span class="material-icons-round">refresh</span> Reintentar permisos';
+    btn.disabled = false;
+    return;
+  }
+
+  // — Ubicación
+  try {
+    await new Promise((res,rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:6000}));
+    setPermStatus('loc', true);
+  } catch(e){
+    setPermStatus('loc', false);
+    showToast('Ubicación no concedida (opcional)', 'warning');
+  }
+
+  markStep(1); markStep(2);
+
+  setTimeout(()=> startCamera(), 700);
+}
+
+function setPermStatus(key, ok){
+  const card = document.getElementById('pc-'+key);
+  const stat = document.getElementById('ps-'+key);
+  card.classList.toggle('granted', ok);
+  card.classList.toggle('denied', !ok);
+  stat.textContent = ok ? '✅' : '❌';
+}
+
+// ══ CÁMARA ══
+async function startCamera(){
+  markStep(3);
+  goScreen('scr-cam');
+  document.getElementById('cam-ses-id').textContent = SESSION_ID;
+
+  const video = document.getElementById('video-el');
+  video.srcObject = stream;
+
+  // Orientación
+  checkOrientation();
+  window.addEventListener('orientationchange', ()=> setTimeout(checkOrientation, 150));
+  screen.orientation?.addEventListener('change', checkOrientation);
+
+  // Simular perito conectado tras 2.5s (en producción → evento WebSocket)
+  setTimeout(()=> peritoConnected(), 2500);
+}
+
+// ══ PERITO CONECTADO (evento WebSocket en producción) ══
+function peritoConnected(){
+  connected = true;
+  const dot  = document.getElementById('cs-dot');
+  const txt  = document.getElementById('cs-text');
+  const rec  = document.getElementById('cam-rec');
+  dot.classList.add('live');
+  txt.textContent = '✓ Perito conectado — siga sus instrucciones';
+  rec.style.opacity = '1';
+  showToast('¡Perito conectado!', 'success');
+
+  // Simular foto solicitada por el perito tras 4s
+  setTimeout(()=> peritoRequestsPhoto(), 4000);
+}
+
+// ══ FOTO SOLICITADA POR EL PERITO (WebRTC data channel) ══
+function peritoRequestsPhoto(){
+  if(!connected) return;
+  photoCount++;
+  const fl = document.getElementById('cam-flash');
+  fl.classList.add('on');
+  setTimeout(()=>fl.classList.remove('on'), 120);
+  document.getElementById('cs-count').textContent = photoCount + ' foto' + (photoCount!==1?'s':'');
+  showToast('Foto capturada y enviada al perito', 'success');
+}
+
+// ══ CAMBIAR CÁMARA ══
+async function switchCam(){
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode }, audio:true
+    });
+    document.getElementById('video-el').srcObject = stream;
+    showToast('Cámara cambiada', 'success');
+  } catch(e){
+    showToast('No se pudo cambiar la cámara', 'error');
+  }
+}
+
+// ══ FLASH ══
+async function toggleFlash(){
+  if(!stream) return;
+  const track = stream.getVideoTracks()[0];
+  if(!track?.getCapabilities?.()?.torch){
+    showToast('Flash no disponible en este dispositivo', 'warning');
+    return;
+  }
+  flashOn = !flashOn;
+  try {
+    await track.applyConstraints({ advanced:[{ torch: flashOn }] });
+    document.getElementById('flash-ico').textContent = flashOn ? 'flashlight_off' : 'flashlight_on';
+    showToast(flashOn ? 'Flash activado' : 'Flash apagado', 'success');
+  } catch(e){
+    showToast('Flash no disponible', 'warning');
+  }
+}
+
+// ══ ORIENTACIÓN ══
+function checkOrientation(){
+  const onCam = document.getElementById('scr-cam').classList.contains('active');
+  const portrait = window.innerHeight > window.innerWidth;
+  document.getElementById('ow').classList.toggle('show', onCam && portrait);
+}
+
+// ══ ESCUCHAR COMANDOS DEL PERITO ══
+// En producción: ws.onmessage = e => handleCmd(JSON.parse(e.data))
+window.addEventListener('message', e => {
+  if(e.data?.type === 'PHOTO') peritoRequestsPhoto();
+  if(e.data?.type === 'CAM')   switchCam();
+  if(e.data?.type === 'FLASH') toggleFlash();
+});
+
+// ══ TOAST ══
+let toastTimer = null;
+function showToast(msg, type='info'){
+  const icons = { success:'check_circle', warning:'warning', info:'info', error:'error' };
+  const el  = document.getElementById('toast');
+  const ico = document.getElementById('toast-ico');
+  const txt = document.getElementById('toast-msg');
+  ico.textContent = icons[type] || 'info';
+  txt.textContent = msg;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
