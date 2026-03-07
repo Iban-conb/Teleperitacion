@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <style>
+/* ══ TOKENS ══ */
 :root{
   --cp-50:#E4F1ED;--cp-100:#ADE1D1;--cp-200:#63D9B4;
   --cp-300:#1FD69D;--cp-400:#0FB280;--cp-500:#059669;
@@ -21,27 +22,26 @@
   --n-100:#F3F4F6;--n-200:#E5E7EB;--n-300:#D1D5DB;
   --n-400:#9CA3AF;--n-500:#6B7280;--n-600:#4B5563;
   --n-700:#374151;--n-800:#1F2937;--n-900:#111827;
-  --md-bg:#F6F7F8;--md-surf:#FFFFFF;--md-surf2:#F3F4F6;
-  --md-surf3:#E9F5F1;--md-outv:#E5E7EB;
+  --md-bg:#F6F7F8;--md-surf:#FFFFFF;--md-surf3:#E9F5F1;--md-outv:#E5E7EB;
   --e1:0 1px 3px rgba(16,24,40,.07),0 1px 2px rgba(16,24,40,.04);
-  --e2:0 4px 10px rgba(16,24,40,.08),0 2px 4px rgba(16,24,40,.04);
   --e3:0 8px 24px rgba(16,24,40,.09),0 4px 8px rgba(16,24,40,.04);
   --font:'Roboto',system-ui,sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--n-800)}
+body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--n-800);line-height:1.45}
 
 /* ══ SCREENS ══ */
 .screen{display:none;flex-direction:column;min-height:100dvh;overflow-y:auto;animation:fadeUp .3s ease}
 .screen.active{display:flex}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* ══ PANTALLA EXPIRADA ══ */
+/* ══════════════════════════════════
+   PANTALLA ENLACE EXPIRADO
+══════════════════════════════════ */
 #scr-expired{
   align-items:center;justify-content:center;
-  padding:32px;text-align:center;gap:16px;
-  background:var(--md-bg)
+  padding:32px;text-align:center;gap:16px;background:var(--md-bg)
 }
 .exp-ico{
   width:72px;height:72px;border-radius:22px;
@@ -58,7 +58,9 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 }
 .exp-contact .material-icons-round{color:var(--c-warn);font-size:20px;flex-shrink:0}
 
-/* ══ BIENVENIDA ══ */
+/* ══════════════════════════════════
+   PANTALLA 1: BIENVENIDA
+══════════════════════════════════ */
 .hero{
   background:var(--md-surf);padding:32px 24px 24px;
   display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
@@ -72,7 +74,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .hero-logo .material-icons-round{font-size:34px;color:#fff}
 .hero h1{font-size:22px;font-weight:700;color:var(--n-900);line-height:1.2}
 .hero h1 span{color:var(--cp-500)}
-.hero-desc{font-size:14px;color:var(--n-500);line-height:1.6;max-width:300px}
+.hero p{font-size:14px;color:var(--n-500);line-height:1.6;max-width:300px}
 .ses-badge{
   display:flex;align-items:center;gap:7px;
   background:var(--md-surf3);border:1px solid rgba(5,150,105,.25);
@@ -87,12 +89,13 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 }
 .exp-badge .material-icons-round{font-size:14px}
 
+/* Pasos */
 .steps-section{padding:20px 16px 8px;flex-shrink:0}
 .steps-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--n-400);margin-bottom:14px;padding:0 4px}
 .step-card{
   background:var(--md-surf);border:1px solid var(--md-outv);border-radius:16px;
   padding:16px;display:flex;align-items:flex-start;gap:14px;margin-bottom:10px;
-  box-shadow:var(--e1);transition:border-color .3s
+  box-shadow:var(--e1);transition:border-color .3s,background .3s
 }
 .step-card.done{border-color:rgba(5,150,105,.35);background:linear-gradient(135deg,#fff,#f5fdf9)}
 .step-num{
@@ -101,8 +104,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
   display:flex;align-items:center;justify-content:center;
   font-size:16px;font-weight:700;color:var(--cp-600);transition:all .3s
 }
-.step-card.done .step-num{background:var(--cp-500);border-color:var(--cp-500)}
-.step-card.done .step-num .material-icons-round{font-size:18px;color:#fff}
+.step-card.done .step-num{background:var(--cp-500);border-color:var(--cp-500);color:#fff;font-size:18px}
 .step-body strong{font-size:14px;font-weight:600;color:var(--n-800);display:block;margin-bottom:3px}
 .step-body p{font-size:13px;color:var(--n-500);line-height:1.5}
 
@@ -116,98 +118,30 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .btn-primary:active{transform:scale(.97)}
 .btn-primary .material-icons-round{font-size:20px}
 
-/* ══ CONSENTIMIENTO ══ */
-#scr-consent{background:var(--md-bg)}
-.consent-hero{
-  background:var(--md-surf);padding:28px 24px 20px;text-align:center;
-  border-bottom:1px solid var(--md-outv);flex-shrink:0
-}
-.consent-icon{
-  width:56px;height:56px;border-radius:18px;background:var(--c-info-bg);
-  border:1px solid rgba(37,99,235,.2);margin:0 auto 14px;
-  display:flex;align-items:center;justify-content:center
-}
-.consent-icon .material-icons-round{font-size:28px;color:var(--c-info)}
-.consent-hero h2{font-size:20px;font-weight:700;color:var(--n-900);margin-bottom:6px}
-.consent-hero p{font-size:13px;color:var(--n-500);line-height:1.5;max-width:290px;margin:0 auto}
-
-.consent-body{padding:16px;flex:1}
-.consent-box{
-  background:var(--md-surf);border:1px solid var(--md-outv);border-radius:12px;
-  padding:14px 16px;margin-bottom:10px;box-shadow:var(--e1)
-}
-.consent-box-title{
-  display:flex;align-items:center;gap:7px;
-  font-size:13px;font-weight:700;color:var(--n-800);margin-bottom:7px
-}
-.consent-box-title .material-icons-round{font-size:16px;color:var(--cp-500)}
-.consent-box p{font-size:12px;color:var(--n-600);line-height:1.6}
-
-.consent-checks{padding:0 16px 4px;flex-shrink:0}
-.consent-check{
-  display:flex;align-items:flex-start;gap:12px;
-  background:var(--md-surf);border:1.5px solid var(--md-outv);border-radius:12px;
-  padding:14px;margin-bottom:10px;
-  cursor:pointer;transition:border-color .2s,background .2s;
-  user-select:none;-webkit-user-select:none;
-}
-.consent-check:active{opacity:.85}
-.consent-check.checked{border-color:var(--cp-500);background:linear-gradient(135deg,#fff,#f0fdf8)}
-
-/* Checkbox custom — cuadrado con tick */
-.chk-box{
-  width:22px;height:22px;border-radius:6px;flex-shrink:0;margin-top:1px;
-  background:var(--n-100);border:2px solid var(--n-300);
-  display:flex;align-items:center;justify-content:center;
-  transition:all .2s;
-}
-.consent-check.checked .chk-box{background:var(--cp-500);border-color:var(--cp-500)}
-.chk-ico{font-size:15px;color:#fff;opacity:0;transition:opacity .2s}
-.consent-check.checked .chk-ico{opacity:1}
-
-.cct strong{font-size:13px;font-weight:600;color:var(--n-800);display:block;margin-bottom:2px}
-.cct span{font-size:12px;color:var(--n-500);line-height:1.4}
-
-/* Botón firmar — como div para evitar problemas con disabled */
-.btn-consent{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  width:calc(100% - 32px);margin:8px auto 24px;flex-shrink:0;
-  padding:17px;
-  background:var(--n-200);color:var(--n-400);
-  border:none;border-radius:100px;
-  font-family:var(--font);font-size:16px;font-weight:600;
-  cursor:default;transition:all .3s;
-  pointer-events:none;/* bloqueado hasta que estén todos marcados */
-}
-.btn-consent.ready{
-  background:var(--cp-500);color:#fff;
-  cursor:pointer;pointer-events:all;
-  box-shadow:0 4px 20px rgba(5,150,105,.42);
-}
-.btn-consent.ready:active{transform:scale(.97)}
-.btn-consent .material-icons-round{font-size:20px}
-
-/* ══ PERMISOS ══ */
+/* ══════════════════════════════════
+   PANTALLA 2: PERMISOS
+══════════════════════════════════ */
 #scr-perms{background:var(--md-bg)}
 .perms-hero{
   background:var(--md-surf);padding:28px 24px 20px;text-align:center;
   border-bottom:1px solid var(--md-outv);flex-shrink:0
 }
 .perms-icon{
-  width:56px;height:56px;border-radius:18px;background:var(--c-info-bg);
-  border:1px solid rgba(37,99,235,.2);margin:0 auto 14px;
-  display:flex;align-items:center;justify-content:center
+  width:56px;height:56px;border-radius:18px;
+  background:var(--c-info-bg);border:1px solid rgba(37,99,235,.2);
+  margin:0 auto 14px;display:flex;align-items:center;justify-content:center
 }
 .perms-icon .material-icons-round{font-size:28px;color:var(--c-info)}
 .perms-hero h2{font-size:20px;font-weight:700;color:var(--n-900);margin-bottom:6px}
-.perms-hero p{font-size:13px;color:var(--n-500);line-height:1.5;max-width:280px;margin:0 auto}
+.perms-hero p{font-size:13px;color:var(--n-500);line-height:1.55;max-width:280px;margin:0 auto}
 .perms-list{padding:16px;display:flex;flex-direction:column;gap:10px;flex:1}
 .perm-card{
   background:var(--md-surf);border:1.5px solid var(--md-outv);border-radius:16px;
-  padding:16px;display:flex;align-items:center;gap:14px;box-shadow:var(--e1);transition:all .3s
+  padding:16px;display:flex;align-items:center;gap:14px;
+  box-shadow:var(--e1);transition:all .3s
 }
 .perm-card.granted{border-color:rgba(5,150,105,.4);background:linear-gradient(135deg,#fff,#f3fdf8)}
-.perm-card.denied{border-color:rgba(220,38,38,.35);background:var(--c-error-bg)}
+.perm-card.denied {border-color:rgba(220,38,38,.35);background:var(--c-error-bg)}
 .perm-icon{
   width:48px;height:48px;border-radius:14px;flex-shrink:0;
   background:var(--n-100);border:1px solid var(--md-outv);
@@ -230,26 +164,20 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .perm-note .material-icons-round{font-size:18px;color:var(--c-info);flex-shrink:0;margin-top:1px}
 .perm-note p{font-size:12px;color:var(--n-700);line-height:1.5}
 
-/* ══ CÁMARA FULLSCREEN ══ */
-#scr-cam{
-  position:fixed;inset:0;
-  background:#000;
-  min-height:unset;overflow:hidden;
-  z-index:50
-}
+/* ══════════════════════════════════
+   PANTALLA 3: CÁMARA FULLSCREEN
+══════════════════════════════════ */
+#scr-cam{position:fixed;inset:0;background:#000;z-index:50;overflow:hidden}
 #scr-cam.active{display:block}
-#video-el{
-  position:absolute;inset:0;width:100%;height:100%;
-  object-fit:cover;display:block
-}
+
+#video-el{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 
 /* Barra superior */
 .cam-top{
   position:absolute;top:0;left:0;right:0;
   display:flex;justify-content:space-between;align-items:center;
   padding:max(env(safe-area-inset-top),14px) 16px 14px;
-  background:linear-gradient(to bottom,rgba(0,0,0,.65),transparent);
-  z-index:3;pointer-events:all
+  background:linear-gradient(to bottom,rgba(0,0,0,.65),transparent);z-index:3
 }
 .cam-rec{
   display:flex;align-items:center;gap:7px;
@@ -261,11 +189,10 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .cam-ses{
   background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
   border:1px solid rgba(255,255,255,.15);border-radius:100px;
-  padding:5px 12px;font-size:10px;color:rgba(255,255,255,.75);
-  font-family:'Roboto Mono',monospace
+  padding:5px 12px;font-size:10px;color:rgba(255,255,255,.75);font-family:monospace
 }
 
-/* Guía encuadre — centrada */
+/* Guía encuadre */
 .cam-guide{
   position:absolute;top:50%;left:50%;
   transform:translate(-50%,-50%);
@@ -279,50 +206,43 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .gc.bl{bottom:10px;left:10px;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
 .gc.br{bottom:10px;right:10px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
 
-/* ── BOTONES LATERALES IZQUIERDA ── */
+/* Botones laterales izquierda */
 .cam-side{
-  position:absolute;
-  left:0;top:50%;transform:translateY(-50%);
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
   display:flex;flex-direction:column;align-items:center;
-  gap:16px;padding:16px 10px;
-  z-index:3;pointer-events:all
+  gap:16px;padding:16px 10px;z-index:3
 }
-/* Botón estándar (girar / flash) */
 .cam-btn{
   width:52px;height:52px;border-radius:50%;
   background:rgba(0,0,0,.48);border:1.5px solid rgba(255,255,255,.22);
   backdrop-filter:blur(8px);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .15s
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s
 }
 .cam-btn .material-icons-round{font-size:22px;color:#fff}
 .cam-btn:active{transform:scale(.88);background:rgba(255,255,255,.18)}
-/* Botón foto — verde grande destacado */
 .cam-btn-photo{
   width:64px;height:64px;border-radius:50%;
   background:var(--cp-500);
   border:3px solid rgba(255,255,255,.45);
   box-shadow:0 0 0 4px rgba(5,150,105,.4),0 4px 16px rgba(5,150,105,.5);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .15s
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s
 }
 .cam-btn-photo .material-icons-round{font-size:30px;color:#fff}
 .cam-btn-photo:active{transform:scale(.88);background:var(--cp-400)}
 
-/* Estado conexión — barra inferior */
+/* Estado conexión */
 .cam-status{
   position:absolute;
   bottom:max(env(safe-area-inset-bottom),16px);
   left:72px;right:16px;
   background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
   border:1px solid rgba(255,255,255,.12);border-radius:10px;
-  padding:10px 14px;display:flex;align-items:center;gap:10px;
-  z-index:3;pointer-events:all
+  padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:3
 }
 .cs-dot{width:9px;height:9px;border-radius:50%;background:var(--c-warn);flex-shrink:0;transition:background .4s}
 .cs-dot.live{background:var(--cp-300);animation:sdot 2s infinite}
 .cs-text{font-size:12px;color:rgba(255,255,255,.85);font-weight:500;flex:1;line-height:1.3}
-.cs-count{font-size:11px;color:rgba(255,255,255,.5);font-family:'Roboto Mono',monospace;flex-shrink:0}
+.cs-count{font-size:11px;color:rgba(255,255,255,.5);font-family:monospace;flex-shrink:0}
 
 /* Flash captura */
 .cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:10;transition:opacity .04s}
@@ -347,19 +267,19 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 </head>
 <body>
 
-<!-- ══ ENLACE EXPIRADO ══ -->
+<!-- ENLACE EXPIRADO -->
 <section class="screen" id="scr-expired">
   <div class="exp-ico"><span class="material-icons-round">link_off</span></div>
   <h2>Enlace caducado</h2>
-  <p>Este enlace de peritación ha expirado. Los enlaces tienen validez de <strong>30 minutos</strong> por seguridad.</p>
+  <p>Este enlace ha expirado. Los enlaces tienen validez de <strong>30 minutos</strong> por seguridad.</p>
   <div class="exp-contact">
     <span class="material-icons-round">phone_in_talk</span>
-    <span>Contacte con su perito para recibir un nuevo enlace de acceso.</span>
+    <span>Contacte con su perito para recibir un nuevo enlace.</span>
   </div>
 </section>
 
 
-<!-- ══ PANTALLA 1: BIENVENIDA ══ -->
+<!-- PANTALLA 1: BIENVENIDA -->
 <section class="screen" id="scr-welcome">
   <div class="hero">
     <div class="hero-logo"><span class="material-icons-round">videocam</span></div>
@@ -372,127 +292,47 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
       <span id="exp-countdown">Válido 30 min</span>
     </div>
     <h1>Peritación<br>de su vehículo<br><span>en remoto</span></h1>
-    <p class="hero-desc">Un perito profesional revisará su vehículo en directo a través de la cámara de su teléfono. Solo le llevará unos minutos.</p>
+    <p>Un perito profesional revisará su vehículo en directo a través de la cámara de su teléfono. Solo le llevará unos minutos.</p>
   </div>
 
   <div class="steps-section">
     <div class="steps-title">¿Cómo funciona?</div>
     <div class="step-card" id="step1">
-      <div class="step-num"><span>1</span></div>
+      <div class="step-num">1</div>
       <div class="step-body">
-        <strong>Firme el consentimiento</strong>
-        <p>Acepte las condiciones legales de la peritación telemática.</p>
+        <strong>Conceda los permisos</strong>
+        <p>Necesitamos acceso a cámara, micrófono y ubicación.</p>
       </div>
     </div>
     <div class="step-card" id="step2">
-      <div class="step-num"><span>2</span></div>
+      <div class="step-num">2</div>
       <div class="step-body">
-        <strong>Conceda los permisos</strong>
-        <p>Cámara, micrófono y ubicación para la sesión en directo.</p>
+        <strong>Gire el teléfono en horizontal</strong>
+        <p>Para capturar mejor todo el vehículo.</p>
       </div>
     </div>
     <div class="step-card" id="step3">
-      <div class="step-num"><span>3</span></div>
+      <div class="step-num">3</div>
       <div class="step-body">
         <strong>Siga las instrucciones del perito</strong>
-        <p>El perito le indicará qué zonas del vehículo enfocar.</p>
+        <p>El perito controlará la sesión y le indicará qué zonas enfocar.</p>
       </div>
     </div>
   </div>
 
-  <button class="btn-primary" onclick="goConsent()">
+  <button class="btn-primary" onclick="goScreen('scr-perms')">
     <span class="material-icons-round">arrow_forward</span>
     Comenzar peritación
   </button>
 </section>
 
 
-<!-- ══ PANTALLA 2: CONSENTIMIENTO ══ -->
-<section class="screen" id="scr-consent">
-  <div class="consent-hero">
-    <div class="consent-icon"><span class="material-icons-round">gavel</span></div>
-    <h2>Consentimiento informado</h2>
-    <p>Lea y acepte los siguientes puntos antes de iniciar la peritación.</p>
-  </div>
-
-  <div class="consent-body">
-    <div class="consent-box">
-      <div class="consent-box-title">
-        <span class="material-icons-round">videocam</span>
-        Captación de imágenes y audio
-      </div>
-      <p>Durante la sesión se capturarán imágenes y audio del vehículo a través de la cámara de su dispositivo, con el único fin de realizar la peritación técnica del mismo.</p>
-    </div>
-    <div class="consent-box">
-      <div class="consent-box-title">
-        <span class="material-icons-round">location_on</span>
-        Geolocalización del vehículo
-      </div>
-      <p>Se registrará la ubicación GPS del vehículo en el momento de la peritación para su inclusión en el informe técnico oficial.</p>
-    </div>
-    <div class="consent-box">
-      <div class="consent-box-title">
-        <span class="material-icons-round">folder_shared</span>
-        Tratamiento de datos personales
-      </div>
-      <p>Sus datos serán tratados conforme al <strong>RGPD (UE) 2016/679</strong> y la LOPDGDD 3/2018. Responsable: PERITservice. Puede ejercer sus derechos en <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1565677c6374767c717471556570677c61667067637c76703b767a78">[email&#160;protected]</a></strong>.</p>
-    </div>
-    <div class="consent-box">
-      <div class="consent-box-title">
-        <span class="material-icons-round">description</span>
-        Informe y conservación de datos
-      </div>
-      <p>Las imágenes formarán parte del informe pericial oficial y se conservarán durante el plazo legalmente establecido para este tipo de documentación técnica.</p>
-    </div>
-  </div>
-
-  <div class="consent-checks">
-
-    <div class="consent-check" id="cw1" onclick="toggleCheck(1)">
-      <div class="chk-box" id="chkbox1">
-        <span class="material-icons-round chk-ico" id="chkico1">check</span>
-      </div>
-      <div class="cct">
-        <strong>Acepto la captación de imágenes y audio</strong>
-        <span>Autorizo la grabación de la sesión de peritación del vehículo.</span>
-      </div>
-    </div>
-
-    <div class="consent-check" id="cw2" onclick="toggleCheck(2)">
-      <div class="chk-box" id="chkbox2">
-        <span class="material-icons-round chk-ico" id="chkico2">check</span>
-      </div>
-      <div class="cct">
-        <strong>Acepto el tratamiento de datos personales</strong>
-        <span>He leído y acepto la política de privacidad conforme al RGPD.</span>
-      </div>
-    </div>
-
-    <div class="consent-check" id="cw3" onclick="toggleCheck(3)">
-      <div class="chk-box" id="chkbox3">
-        <span class="material-icons-round chk-ico" id="chkico3">check</span>
-      </div>
-      <div class="cct">
-        <strong>Declaro ser titular o autorizado del vehículo</strong>
-        <span>Confirmo tener legitimación para autorizar esta peritación.</span>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="btn-consent" id="btn-consent" onclick="consentContinue()">
-    <span class="material-icons-round">verified</span>
-    <span>Firmar y continuar</span>
-  </div>
-</section>
-
-
-<!-- ══ PANTALLA 3: PERMISOS ══ -->
+<!-- PANTALLA 2: PERMISOS -->
 <section class="screen" id="scr-perms">
   <div class="perms-hero">
     <div class="perms-icon"><span class="material-icons-round">lock_open</span></div>
     <h2>Necesitamos su permiso</h2>
-    <p>Para la peritación remota necesitamos acceder a los siguientes servicios del dispositivo.</p>
+    <p>Para realizar la peritación remota necesitamos acceder a los siguientes servicios.</p>
   </div>
 
   <div class="perms-list">
@@ -522,7 +362,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
     </div>
     <div class="perm-note">
       <span class="material-icons-round">info</span>
-      <p>Sus datos solo se utilizan durante esta sesión de peritación y no se comparten con terceros ajenos a la gestión del siniestro.</p>
+      <p>Sus datos solo se utilizan durante esta sesión de peritación y no se comparten con terceros.</p>
     </div>
   </div>
 
@@ -533,12 +373,10 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 </section>
 
 
-<!-- ══ PANTALLA 4: CÁMARA FULLSCREEN ══ -->
+<!-- PANTALLA 3: CÁMARA FULLSCREEN -->
 <section class="screen" id="scr-cam">
-
   <video id="video-el" autoplay playsinline muted></video>
 
-  <!-- TOP -->
   <div class="cam-top">
     <div class="cam-rec" id="cam-rec" style="opacity:0">
       <div class="rdot"></div>EN DIRECTO
@@ -546,13 +384,12 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
     <div class="cam-ses" id="cam-ses-id">SES-000000</div>
   </div>
 
-  <!-- GUÍA ENCUADRE -->
   <div class="cam-guide">
     <div class="gc tl"></div><div class="gc tr"></div>
     <div class="gc bl"></div><div class="gc br"></div>
   </div>
 
-  <!-- BOTONES LATERALES IZQUIERDA: girar · foto · flash -->
+  <!-- Botones laterales izquierda: girar · foto · flash -->
   <div class="cam-side">
     <div class="cam-btn" onclick="switchCam()" title="Cambiar cámara">
       <span class="material-icons-round">flip_camera_android</span>
@@ -560,12 +397,11 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
     <div class="cam-btn-photo" onclick="takeClientPhoto()" title="Capturar foto">
       <span class="material-icons-round">photo_camera</span>
     </div>
-    <div class="cam-btn" id="flash-btn" onclick="toggleFlash()" title="Flash">
+    <div class="cam-btn" onclick="toggleFlash()" title="Flash">
       <span class="material-icons-round" id="flash-ico">flashlight_on</span>
     </div>
   </div>
 
-  <!-- ESTADO CONEXIÓN -->
   <div class="cam-status">
     <div class="cs-dot" id="cs-dot"></div>
     <span class="cs-text" id="cs-text">Esperando conexión del perito…</span>
@@ -573,9 +409,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
   </div>
 
   <div class="cam-flash" id="cam-flash"></div>
-
 </section>
-
 
 <!-- TOAST -->
 <div class="toast" id="toast">
@@ -583,22 +417,18 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
   <span id="toast-msg">—</span>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// ══════════════════════════════════════
-// TOKEN: el perito genera btoa(JSON.stringify({s,p,e,ts}))
-// Aquí lo validamos y comprobamos caducidad (30 min)
-// ══════════════════════════════════════
+<script>
+// ══ TOKEN Y CADUCIDAD ══
 const EXPIRY_MS = 30 * 60 * 1000;
 const raw = new URLSearchParams(window.location.search).get('t');
 let SESSION_ID = 'SES-DEMO', PLATE = '', tokenTs = null;
 
 function decodeToken(){
   if(!raw){
-    // Compatibilidad con URLs antiguas (?s=...&p=...&e=...)
     const p = new URLSearchParams(window.location.search);
     SESSION_ID = p.get('s') || 'SES-DEMO';
     PLATE      = p.get('p') || '';
-    return true; // sin timestamp → modo demo, no caduca
+    return true;
   }
   try {
     const d = JSON.parse(atob(raw));
@@ -612,15 +442,13 @@ function decodeToken(){
 function startCountdown(){
   if(!tokenTs) return;
   const el = document.getElementById('exp-countdown');
-  const tick = () => {
+  const iv = setInterval(()=>{
     const rem = Math.max(0, EXPIRY_MS - (Date.now() - tokenTs));
     if(rem === 0){ clearInterval(iv); showExpired(); return; }
-    const m = Math.floor(rem / 60000);
-    const s = Math.floor((rem % 60000) / 1000);
+    const m = Math.floor(rem/60000);
+    const s = Math.floor((rem%60000)/1000);
     if(el) el.textContent = `Caduca en ${m}:${String(s).padStart(2,'0')}`;
-  };
-  tick();
-  const iv = setInterval(tick, 1000);
+  }, 1000);
 }
 
 function showExpired(){
@@ -633,7 +461,7 @@ if(!decodeToken()){
   document.getElementById('scr-expired').classList.add('active');
 } else {
   document.getElementById('scr-welcome').classList.add('active');
-  document.getElementById('ses-label').textContent = SESSION_ID + (PLATE ? ' · ' + PLATE : '');
+  document.getElementById('ses-label').textContent = SESSION_ID + (PLATE ? ' · '+PLATE : '');
   if(!raw) document.getElementById('exp-countdown').textContent = 'Modo demo';
   else startCountdown();
 }
@@ -646,7 +474,6 @@ function goScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if(id === 'scr-cam'){
-    // Intentar fullscreen
     const el = document.documentElement;
     try {
       if(el.requestFullscreen) el.requestFullscreen();
@@ -654,37 +481,19 @@ function goScreen(id){
     } catch(e){}
   }
 }
-function goConsent(){ markStep(1); goScreen('scr-consent'); }
-function goPerms()  { markStep(2); goScreen('scr-perms'); }
 
 function markStep(n){
   const el = document.getElementById('step'+n);
   if(!el) return;
   el.classList.add('done');
-  el.querySelector('.step-num').innerHTML='<span class="material-icons-round">check</span>';
-}
-
-// ══ CONSENTIMIENTO ══
-const checks = {1:false, 2:false, 3:false};
-
-function toggleCheck(n){
-  checks[n] = !checks[n];
-  document.getElementById('cw'+n).classList.toggle('checked', checks[n]);
-  const all = checks[1] && checks[2] && checks[3];
-  const btn = document.getElementById('btn-consent');
-  btn.classList.toggle('ready', all);
-}
-
-function consentContinue(){
-  if(!(checks[1] && checks[2] && checks[3])) return;
-  goPerms();
+  el.querySelector('.step-num').textContent = '✓';
 }
 
 // ══ PERMISOS ══
 async function requestPerms(){
   const btn = document.getElementById('btn-perms');
   btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> Solicitando permisos…';
-  btn.disabled = true;
+  btn.style.pointerEvents = 'none';
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -699,7 +508,7 @@ async function requestPerms(){
     setPermStatus('mic', false);
     showToast('Necesita conceder acceso a la cámara', 'error');
     btn.innerHTML = '<span class="material-icons-round">refresh</span> Reintentar permisos';
-    btn.disabled = false;
+    btn.style.pointerEvents = 'all';
     return;
   }
 
@@ -711,7 +520,7 @@ async function requestPerms(){
     showToast('Ubicación no concedida (opcional)', 'warning');
   }
 
-  markStep(3);
+  markStep(1); markStep(2);
   setTimeout(()=> startCamera(), 700);
 }
 
@@ -726,6 +535,7 @@ async function startCamera(){
   goScreen('scr-cam');
   document.getElementById('cam-ses-id').textContent = SESSION_ID;
   document.getElementById('video-el').srcObject = stream;
+  // En producción → evento WebSocket
   setTimeout(()=> peritoConnected(), 2500);
 }
 
@@ -733,6 +543,7 @@ function peritoConnected(){
   document.getElementById('cs-dot').classList.add('live');
   document.getElementById('cs-text').textContent = '✓ Perito conectado — siga sus instrucciones';
   document.getElementById('cam-rec').style.opacity = '1';
+  markStep(3);
   showToast('¡Perito conectado!', 'success');
   setTimeout(()=> peritoRequestsPhoto(), 4000);
 }
@@ -743,7 +554,7 @@ function doFlash(){
   const fl = document.getElementById('cam-flash');
   fl.classList.add('on');
   setTimeout(()=>fl.classList.remove('on'), 120);
-  document.getElementById('cs-count').textContent = photoCount + ' foto' + (photoCount!==1?'s':'');
+  document.getElementById('cs-count').textContent = photoCount+' foto'+(photoCount!==1?'s':'');
 }
 function peritoRequestsPhoto(){ doFlash(); showToast('Foto capturada', 'success'); }
 function takeClientPhoto(){ doFlash(); showToast('Foto enviada al perito', 'success'); }
@@ -764,14 +575,14 @@ async function toggleFlash(){
   if(!stream) return;
   const track = stream.getVideoTracks()[0];
   if(!track?.getCapabilities?.()?.torch){
-    showToast('Flash no disponible en este dispositivo','warning'); return;
+    showToast('Flash no disponible en este dispositivo', 'warning'); return;
   }
   flashOn = !flashOn;
   try {
     await track.applyConstraints({ advanced:[{torch: flashOn}] });
     document.getElementById('flash-ico').textContent = flashOn ? 'flashlight_off' : 'flashlight_on';
     showToast(flashOn ? 'Flash activado' : 'Flash apagado', 'success');
-  } catch(e){ showToast('Flash no disponible','warning'); }
+  } catch(e){ showToast('Flash no disponible', 'warning'); }
 }
 
 // ══ COMANDOS DEL PERITO (WebSocket en producción) ══
@@ -786,4 +597,12 @@ let toastTimer = null;
 function showToast(msg, type='info'){
   const icons = {success:'check_circle',warning:'warning',info:'info',error:'error'};
   const el = document.getElementById('toast');
-  document.getElementById('toast-ico').textContent = icons
+  document.getElementById('toast-ico').textContent = icons[type]||'info';
+  document.getElementById('toast-msg').textContent = msg;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
