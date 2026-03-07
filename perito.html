@@ -940,20 +940,31 @@ const pad = n => String(n).padStart(2,'0');
 function genId(){ return 'SES-'+Date.now().toString(36).toUpperCase().slice(-6) }
 
 /* ════ PEERJS — INIT PERITO ════ */
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:freestun.net:3478' },
+  // OpenRelay — UDP + TCP + TLS
+  { urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:80?transport=tcp',
+    username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject', credential: 'openrelayproject' },
+  // FreeTURN — alternativa
+  { urls: 'turn:freestun.net:3478',
+    username: 'free', credential: 'free' },
+  { urls: 'turn:freestun.net:5349',
+    username: 'free', credential: 'free' },
+];
+
 const PEER_CFG = {
   host: '0.peerjs.com', port: 443, path: '/', secure: true,
   debug: 1,
   config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject', credential: 'openrelayproject' },
-    ],
+    iceServers: ICE_SERVERS,
     iceTransportPolicy: 'all'
   }
 };

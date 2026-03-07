@@ -595,12 +595,19 @@ function connectToPeers(){
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:freestun.net:3478' },
         { urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:80?transport=tcp',
           username: 'openrelayproject', credential: 'openrelayproject' },
         { urls: 'turn:openrelay.metered.ca:443',
           username: 'openrelayproject', credential: 'openrelayproject' },
-        { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        { urls: 'turns:openrelay.metered.ca:443?transport=tcp',
           username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:freestun.net:3478',
+          username: 'free', credential: 'free' },
+        { urls: 'turn:freestun.net:5349',
+          username: 'free', credential: 'free' },
       ],
       iceTransportPolicy: 'all'
     }
@@ -735,13 +742,16 @@ function blobToDataURL(blob){
   });
 }
 
-// Envío en trozos de 64KB para no saturar el DataChannel
+// Envío en trozos pequeños con delay para redes móviles
 function sendInChunks(dataURL){
-  const CHUNK = 64 * 1024; // 64 KB
+  const CHUNK = 16 * 1024; // 16 KB — más seguro en 4G
   const total = Math.ceil(dataURL.length / CHUNK);
   const photoId = 'ph-' + Date.now();
 
-  for(let i = 0; i < total; i++){
+  let i = 0;
+  function sendNext(){
+    if(i >= total) return;
+    if(!dataConn?.open){ showToast('Conexión perdida al enviar foto', 'error'); return; }
     dataConn.send({
       type:    'PHOTO_CHUNK',
       photoId: photoId,
@@ -749,7 +759,11 @@ function sendInChunks(dataURL){
       total:   total,
       data:    dataURL.slice(i * CHUNK, (i + 1) * CHUNK)
     });
+    i++;
+    // Pequeño delay entre chunks para no saturar el buffer
+    setTimeout(sendNext, 20);
   }
+  sendNext();
 }
 
 // ══ FOTO MANUAL DEL CLIENTE ══
