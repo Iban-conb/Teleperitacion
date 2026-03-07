@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round"></noscript>
-<script src="peerjs_min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 /* ═══════════════════════════════════════
    TOKENS
@@ -1023,8 +1023,6 @@ function initPeer(){
   });
 }
 
-initPeer();
-
 /* ════ TEXTOS PREDEFINIDOS ══ */
 const TPL = {
   wa: (n,p,e) =>
@@ -1393,6 +1391,9 @@ document.addEventListener('keydown',e=>{
   if(e.key==='-')cmd('ZO');
   if(e.key==='l'||e.key==='L')openDlg();
 });
+
+/* ════ ARRANQUE ════ */
+initPeer();
 </script>
 </body>
 </html>
