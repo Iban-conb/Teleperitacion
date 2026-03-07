@@ -10,6 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230FB280'/><path d='M8 11a2 2 0 0 1 2-2h8l4 4v8a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V11z' fill='white' opacity='.9'/><circle cx='22' cy='14' r='4' fill='%23E4F1ED'/><path d='M20 14l3-2v4l-3-2z' fill='%230FB280'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 /* ══ TOKENS ══ */
 :root{
@@ -208,7 +209,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 
 /* Botones laterales izquierda */
 .cam-side{
-  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
   display:flex;flex-direction:column;align-items:center;
   gap:16px;padding:16px 10px;z-index:3
 }
@@ -234,7 +235,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .cam-status{
   position:absolute;
   bottom:max(env(safe-area-inset-bottom),16px);
-  left:72px;right:16px;
+  left:16px;right:72px;
   background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
   border:1px solid rgba(255,255,255,.12);border-radius:10px;
   padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:3
@@ -468,6 +469,7 @@ if(!decodeToken()){
 
 // ══ ESTADO ══
 let stream = null, facingMode = 'environment', flashOn = false, photoCount = 0;
+let peer = null, dataConn = null;
 
 // ══ NAVEGACIÓN ══
 function goScreen(id){
@@ -530,25 +532,142 @@ function setPermStatus(key, ok){
   document.getElementById('ps-'+key).textContent = ok ? '✅' : '❌';
 }
 
-// ══ CÁMARA ══
+// ══ CÁMARA + CONEXIÓN PEERJS ══
 async function startCamera(){
   goScreen('scr-cam');
   document.getElementById('cam-ses-id').textContent = SESSION_ID;
   document.getElementById('video-el').srcObject = stream;
-  // En producción → evento WebSocket
-  setTimeout(()=> peritoConnected(), 2500);
+  connectToPeers();
 }
 
-function peritoConnected(){
-  document.getElementById('cs-dot').classList.add('live');
-  document.getElementById('cs-text').textContent = '✓ Perito conectado — siga sus instrucciones';
-  document.getElementById('cam-rec').style.opacity = '1';
-  markStep(3);
-  showToast('¡Perito conectado!', 'success');
-  setTimeout(()=> peritoRequestsPhoto(), 4000);
+function connectToPeers(){
+  // El cliente crea un peer con ID "cliente-{SESSION_ID}"
+  const clientPeerId = 'cliente-' + SESSION_ID;
+  const peritoPeerId = 'perito-'  + SESSION_ID;
+
+  peer = new Peer(clientPeerId, {
+    host: '0.peerjs.com', port: 443, path: '/', secure: true,
+    debug: 0
+  });
+
+  peer.on('open', () => {
+    // 1. Abrir DataChannel para recibir comandos del perito
+    dataConn = peer.connect(peritoPeerId, {reliable: true});
+    dataConn.on('open', () => {
+      showToast('Canal de comandos activo', 'success');
+    });
+    dataConn.on('data', data => handleCmd(data));
+    dataConn.on('error', () => {});
+
+    // 2. Llamar al perito con nuestro stream de vídeo
+    const call = peer.call(peritoPeerId, stream);
+    call.on('error', () => {});
+
+    // Actualizar UI
+    document.getElementById('cs-dot').classList.add('live');
+    document.getElementById('cs-text').textContent = '✓ Conectado con el perito';
+    document.getElementById('cam-rec').style.opacity = '1';
+    markStep(3);
+    showToast('¡Conectado con el perito!', 'success');
+  });
+
+  peer.on('error', err => {
+    // Si el peer del perito no existe aún, reintentamos
+    if(err.type === 'peer-unavailable'){
+      showToast('Esperando al perito…', 'warning');
+      setTimeout(connectToPeers, 4000);
+    } else {
+      showToast('Error de conexión', 'error');
+    }
+  });
 }
 
-// ══ FOTO ══
+// ══ RECIBIR COMANDOS DEL PERITO ══
+function handleCmd(data){
+  if(!data?.cmd) return;
+  if(data.cmd === 'PHOTO') captureAndSend();
+  if(data.cmd === 'CAM')   switchCam();
+  if(data.cmd === 'FLASH') toggleFlash();
+  if(data.cmd === 'END')   showToast('Sesión finalizada por el perito', 'warning');
+}
+
+// ══ CAPTURAR FOTO DE ALTA CALIDAD Y ENVIAR AL PERITO ══
+async function captureAndSend(){
+  doFlash();
+  showToast('Capturando foto…', 'info');
+
+  try {
+    let dataURL;
+
+    // Opción 1: ImageCapture API — captura a máxima resolución del sensor
+    const track = stream.getVideoTracks()[0];
+    if(window.ImageCapture){
+      const imageCapture = new ImageCapture(track);
+      const blob = await imageCapture.takePhoto({
+        imageWidth:  track.getCapabilities()?.width?.max  || 4032,
+        imageHeight: track.getCapabilities()?.height?.max || 3024,
+      });
+      dataURL = await blobToDataURL(blob);
+    } else {
+      // Opción 2: canvas a resolución nativa del stream (fallback)
+      const vid = document.getElementById('video-el');
+      const canvas = document.createElement('canvas');
+      canvas.width  = vid.videoWidth;
+      canvas.height = vid.videoHeight;
+      canvas.getContext('2d').drawImage(vid, 0, 0);
+      dataURL = canvas.toDataURL('image/jpeg', 0.97);
+    }
+
+    // Enviar al perito por DataChannel
+    // Los DataChannels tienen límite de ~256KB por mensaje → troceamos si es necesario
+    if(dataConn?.open){
+      sendInChunks(dataURL);
+      showToast('Foto enviada al perito ✓', 'success');
+    } else {
+      showToast('Foto capturada (sin conexión activa)', 'warning');
+    }
+
+  } catch(e){
+    console.error('Error capturando foto:', e);
+    // Fallback final: frame del vídeo
+    const vid = document.getElementById('video-el');
+    const canvas = document.createElement('canvas');
+    canvas.width  = vid.videoWidth  || 1280;
+    canvas.height = vid.videoHeight || 720;
+    canvas.getContext('2d').drawImage(vid, 0, 0);
+    const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+    if(dataConn?.open) sendInChunks(dataURL);
+    showToast('Foto capturada', 'success');
+  }
+}
+
+function blobToDataURL(blob){
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload  = () => res(reader.result);
+    reader.onerror = rej;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Envío en trozos de 64KB para no saturar el DataChannel
+function sendInChunks(dataURL){
+  const CHUNK = 64 * 1024; // 64 KB
+  const total = Math.ceil(dataURL.length / CHUNK);
+  const photoId = 'ph-' + Date.now();
+
+  for(let i = 0; i < total; i++){
+    dataConn.send({
+      type:    'PHOTO_CHUNK',
+      photoId: photoId,
+      index:   i,
+      total:   total,
+      data:    dataURL.slice(i * CHUNK, (i + 1) * CHUNK)
+    });
+  }
+}
+
+// ══ FOTO MANUAL DEL CLIENTE ══
 function doFlash(){
   photoCount++;
   const fl = document.getElementById('cam-flash');
@@ -556,16 +675,31 @@ function doFlash(){
   setTimeout(()=>fl.classList.remove('on'), 120);
   document.getElementById('cs-count').textContent = photoCount+' foto'+(photoCount!==1?'s':'');
 }
-function peritoRequestsPhoto(){ doFlash(); showToast('Foto capturada', 'success'); }
-function takeClientPhoto(){ doFlash(); showToast('Foto enviada al perito', 'success'); }
+
+function takeClientPhoto(){
+  captureAndSend();
+}
 
 // ══ CAMBIAR CÁMARA ══
 async function switchCam(){
   facingMode = facingMode === 'environment' ? 'user' : 'environment';
   if(stream) stream.getTracks().forEach(t=>t.stop());
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video:{facingMode}, audio:true });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode, width:{ideal:1920}, height:{ideal:1080} },
+      audio: true
+    });
     document.getElementById('video-el').srcObject = stream;
+    // Reemplazar el stream en la llamada activa (si existe)
+    if(peer){
+      const connections = Object.values(peer.connections);
+      connections.forEach(conns => conns.forEach(conn => {
+        if(conn.peerConnection){
+          const sender = conn.peerConnection.getSenders().find(s=>s.track?.kind==='video');
+          if(sender) sender.replaceTrack(stream.getVideoTracks()[0]);
+        }
+      }));
+    }
     showToast('Cámara cambiada', 'success');
   } catch(e){ showToast('No se pudo cambiar la cámara', 'error'); }
 }
@@ -584,13 +718,6 @@ async function toggleFlash(){
     showToast(flashOn ? 'Flash activado' : 'Flash apagado', 'success');
   } catch(e){ showToast('Flash no disponible', 'warning'); }
 }
-
-// ══ COMANDOS DEL PERITO (WebSocket en producción) ══
-window.addEventListener('message', e => {
-  if(e.data?.type === 'PHOTO') peritoRequestsPhoto();
-  if(e.data?.type === 'CAM')   switchCam();
-  if(e.data?.type === 'FLASH') toggleFlash();
-});
 
 // ══ TOAST ══
 let toastTimer = null;
