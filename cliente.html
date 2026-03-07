@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230FB280'/><path d='M8 11a2 2 0 0 1 2-2h8l4 4v8a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V11z' fill='white' opacity='.9'/><circle cx='22' cy='14' r='4' fill='%23E4F1ED'/><path d='M20 14l3-2v4l-3-2z' fill='%230FB280'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="peerjs_min.js"></script>
 <style>
 /* ══ TOKENS ══ */
 :root{
@@ -263,7 +263,29 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
 .toast.success{border-left:3px solid var(--cp-400)}
 .toast.warning{border-left:3px solid var(--c-warn)}
 .toast.error  {border-left:3px solid var(--c-error)}
-.toast .material-icons-round{font-size:17px}
+/* ══ OVERLAY ROTAR ══ */
+.rotate-overlay{
+  display:none;
+  position:absolute;inset:0;z-index:50;
+  background:rgba(0,0,0,.92);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;
+}
+.rotate-overlay.show{ display:flex; }
+.rotate-box{
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:32px 28px;text-align:center;
+}
+.rotate-ico{
+  font-size:72px;color:var(--cp-300);
+  animation:rotateHint 1.8s ease-in-out infinite;
+}
+@keyframes rotateHint{
+  0%,100%{ transform:rotate(0deg); }
+  40%    { transform:rotate(-90deg); }
+  60%    { transform:rotate(-90deg); }
+}
+.rotate-title{ font-size:22px;font-weight:700;color:#fff }
+.rotate-sub  { font-size:14px;color:rgba(255,255,255,.65);max-width:240px;line-height:1.4 }
 </style>
 </head>
 <body>
@@ -390,7 +412,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
     <div class="gc bl"></div><div class="gc br"></div>
   </div>
 
-  <!-- Botones laterales izquierda: girar · foto · flash -->
+  <!-- Botones laterales derecha: girar · foto · flash -->
   <div class="cam-side">
     <div class="cam-btn" onclick="switchCam()" title="Cambiar cámara">
       <span class="material-icons-round">flip_camera_android</span>
@@ -410,6 +432,16 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
   </div>
 
   <div class="cam-flash" id="cam-flash"></div>
+
+  <!-- Overlay: rotar a horizontal -->
+  <div class="rotate-overlay" id="rotate-overlay">
+    <div class="rotate-box">
+      <span class="material-icons-round rotate-ico">screen_rotation</span>
+      <div class="rotate-title">Gire el móvil</div>
+      <div class="rotate-sub">La cámara debe usarse en horizontal</div>
+    </div>
+  </div>
+
 </section>
 
 <!-- TOAST -->
@@ -550,6 +582,8 @@ async function startCamera(){
   goScreen('scr-cam');
   document.getElementById('cam-ses-id').textContent = SESSION_ID;
   document.getElementById('video-el').srcObject = stream;
+  lockLandscape();
+  checkOrientation();
   connectToPeers();
 }
 
@@ -566,8 +600,14 @@ function connectToPeers(){
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' }
-      ]
+        { urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject', credential: 'openrelayproject' },
+      ],
+      iceTransportPolicy: 'all'
     }
   };
 
@@ -774,6 +814,31 @@ function showToast(msg, type='info'){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>el.classList.remove('show'), 3000);
 }
+
+// ══ ORIENTACIÓN HORIZONTAL ══
+function checkOrientation(){
+  const inCam = document.getElementById('scr-cam').classList.contains('active');
+  if(!inCam) return;
+  const overlay = document.getElementById('rotate-overlay');
+  const isPortrait = window.innerHeight > window.innerWidth;
+  if(isPortrait){
+    overlay.classList.add('show');
+  } else {
+    overlay.classList.remove('show');
+  }
+}
+
+// Intentar bloquear la orientación en landscape al entrar a la cámara
+function lockLandscape(){
+  try {
+    if(screen.orientation?.lock){
+      screen.orientation.lock('landscape').catch(()=>{});
+    }
+  } catch(e){}
+}
+
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', checkOrientation);
 </script>
 </body>
 </html>

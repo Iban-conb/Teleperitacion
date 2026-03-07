@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round"></noscript>
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="peerjs_min.js"></script>
 <style>
 /* ═══════════════════════════════════════
    TOKENS
@@ -270,8 +270,7 @@ body{font-family:var(--font);font-size:14px;background:var(--md-bg);color:var(--
 .idle-t{font-size:13px;font-weight:500;color:rgba(255,255,255,.34);position:relative;z-index:1}
 .idle-s{font-size:11px;color:rgba(255,255,255,.16);position:relative;z-index:1;text-align:center;max-width:220px;line-height:1.5;padding:0 12px}
 
-#vid-live{position:absolute;inset:0;display:none;background:linear-gradient(160deg,#081510,#0c1d14,#071310);align-items:center;justify-content:center}
-#vid-live span{font-size:10px;color:rgba(5,150,105,.14);letter-spacing:.22em;text-transform:uppercase}
+#vid-live{position:absolute;inset:0;display:none;width:100%;height:100%;object-fit:cover;background:#000}
 
 .vid-ov{position:absolute;inset:0;pointer-events:none}
 .vc{position:absolute;width:20px;height:20px;border-color:var(--cp-300);border-style:solid;opacity:.6}
@@ -934,68 +933,89 @@ const S = {
 const pad = n => String(n).padStart(2,'0');
 function genId(){ return 'SES-'+Date.now().toString(36).toUpperCase().slice(-6) }
 
-/* ════ PEERJS — INIT PERITO ════
-   Rol del perito:
-   - Escucha llamadas de vídeo entrantes del cliente  (S.peer.on 'call')
-   - Escucha conexiones de datos entrantes del cliente (S.peer.on 'connection')
-   - El cliente es siempre quien inicia AMBAS conexiones
-════ */
+/* ════ PEERJS — INIT PERITO ════ */
+const PEER_CFG = {
+  host: '0.peerjs.com', port: 443, path: '/', secure: true,
+  debug: 1,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject', credential: 'openrelayproject' },
+    ],
+    iceTransportPolicy: 'all'
+  }
+};
+
 function initPeer(){
-  if(S.peer){ S.peer.destroy(); S.peer = null; }
+  if(S.peer){ try{ S.peer.destroy(); }catch(e){} S.peer = null; }
   const peerId = 'perito-' + S.id;
-  S.peer = new Peer(peerId, {
-    host: '0.peerjs.com', port: 443, path: '/', secure: true,
-    debug: 0
+  S.peer = new Peer(peerId, PEER_CFG);
+
+  S.peer.on('open', id => {
+    console.log('Perito peer abierto:', id);
+    snack('Esperando cliente… ID: ' + S.id, 'info');
   });
 
   S.peer.on('error', err => {
-    console.warn('PeerJS error:', err.type);
+    console.warn('PeerJS error:', err.type, err.message);
     if(err.type === 'unavailable-id'){
       S.id = genId();
       document.getElementById('chip-ses').textContent = S.id;
       document.getElementById('mib-ses').textContent  = S.id;
       updatePrev();
       setTimeout(initPeer, 800);
+    } else if(err.type === 'network' || err.type === 'server-error'){
+      setTimeout(initPeer, 3000);
     } else {
-      snack('Error de conexión: ' + err.type, 'error');
+      snack('Error: ' + err.type, 'error');
     }
   });
 
-  // 1. VÍDEO: el cliente llama, nosotros contestamos sin enviar stream
+  S.peer.on('disconnected', () => {
+    console.warn('Peer desconectado, reconectando…');
+    try { S.peer.reconnect(); } catch(e) { setTimeout(initPeer, 2000); }
+  });
+
+  // VÍDEO: el cliente nos llama con su stream
   S.peer.on('call', call => {
     call.answer();
     call.on('stream', remoteStream => {
       const vid = document.getElementById('vid-live');
       vid.srcObject = remoteStream;
       vid.onloadedmetadata = () => { vid.play().catch(()=>{}); };
-      vid.play().catch(()=>{});
-      // Dar tiempo al vídeo a arrancar antes de activar UI
+      if(vid.readyState >= 1) vid.play().catch(()=>{});
       setTimeout(clientConnect, 800);
     });
     call.on('close', () => { if(S.connected) endSession(true); });
     call.on('error', e => console.warn('call error', e));
   });
 
-  // 2. DATOS: el cliente abre el DataChannel, nosotros lo recibimos
+  // DATOS: el cliente abre el DataChannel hacia nosotros
   S.peer.on('connection', conn => {
     S.dataConn = conn;
-    conn.on('open', () => snack('Canal de datos activo', 'success'));
+    conn.on('open', () => {
+      console.log('DataChannel abierto con cliente');
+      snack('Canal de datos activo', 'success');
+    });
     conn.on('data', data => {
       if(!data?.type) return;
-      if(data.type === 'PHOTO_DATA'){
-        receivePhoto(data.dataURL);
-      }
+      if(data.type === 'PHOTO_DATA') receivePhoto(data.dataURL);
       if(data.type === 'PHOTO_CHUNK'){
         const {photoId, index, total, data: chunk} = data;
-        if(!S.chunks[photoId]) S.chunks[photoId] = {parts: new Array(total), received: 0};
-        if(!S.chunks[photoId].parts[index]){
+        if(!S.chunks[photoId]) S.chunks[photoId] = {parts: new Array(total).fill(null), received: 0};
+        if(S.chunks[photoId].parts[index] === null){
           S.chunks[photoId].parts[index] = chunk;
           S.chunks[photoId].received++;
         }
         if(S.chunks[photoId].received === total){
-          const dataURL = S.chunks[photoId].parts.join('');
+          receivePhoto(S.chunks[photoId].parts.join(''));
           delete S.chunks[photoId];
-          receivePhoto(dataURL);
         }
       }
     });
@@ -1164,8 +1184,7 @@ function sendLink(){
 
   closeDlg();
   setStatus('wait');
-  snack('Enlace enviado por '+{wa:'WhatsApp',sms:'SMS',mail:'Email'}[S.ch],'success');
-  setTimeout(()=>clientConnect(phone,plate),4000);
+  snack('Enlace enviado — esperando que el cliente se conecte…','success');
 }
 
 /* ════ CLIENTE CONECTADO (llamado desde PeerJS on-stream) ════ */
