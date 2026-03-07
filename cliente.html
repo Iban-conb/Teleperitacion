@@ -475,12 +475,10 @@ let peer = null, dataConn = null;
 function goScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Fullscreen solo si es la pantalla de cámara Y hay gesto de usuario activo
   if(id === 'scr-cam'){
-    const el = document.documentElement;
-    try {
-      if(el.requestFullscreen) el.requestFullscreen();
-      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } catch(e){}
+    // No llamamos requestFullscreen aquí automáticamente — lo pedimos con un botón visible
+    // para evitar el error "must be initiated by a user gesture"
   }
 }
 
@@ -493,18 +491,33 @@ function markStep(n){
 
 // ══ PERMISOS ══
 async function requestPerms(){
+  // Aprovechamos el gesto del usuario para pedir fullscreen ya
+  const el = document.documentElement;
+  try {
+    if(el.requestFullscreen) await el.requestFullscreen();
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } catch(e){ /* ignorar si el usuario lo deniega */ }
+
   const btn = document.getElementById('btn-perms');
   btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> Solicitando permisos…';
   btn.style.pointerEvents = 'none';
 
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode, width:{ideal:1920}, height:{ideal:1080} },
-      audio: true
-    });
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode, width:{ideal:1920}, height:{ideal:1080} },
+        audio: true
+      });
+    } catch(e1) {
+      // Fallback: solo vídeo sin audio
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode },
+        audio: false
+      });
+    }
     setPermStatus('cam', true);
     setPermStatus('mic', true);
-    showToast('Cámara y micrófono concedidos', 'success');
+    showToast('Cámara concedida', 'success');
   } catch(e){
     setPermStatus('cam', false);
     setPermStatus('mic', false);
@@ -541,56 +554,74 @@ async function startCamera(){
 }
 
 function connectToPeers(){
-  // El cliente crea su peer con ID "cliente-{SESSION_ID}"
   const clientPeerId = 'cliente-' + SESSION_ID;
   const peritoPeerId = 'perito-'  + SESSION_ID;
 
-  if(peer){ peer.destroy(); peer = null; }
+  if(peer){ try{ peer.destroy(); }catch(e){} peer = null; dataConn = null; }
 
-  peer = new Peer(clientPeerId, {
+  const PEER_CFG = {
     host: '0.peerjs.com', port: 443, path: '/', secure: true,
-    debug: 0
-  });
-
-  peer.on('error', err => {
-    console.warn('PeerJS cliente error:', err.type);
-    if(err.type === 'peer-unavailable'){
-      // El perito aún no está listo, reintentamos
-      showToast('Esperando al perito…', 'warning');
-      setTimeout(connectToPeers, 4000);
-    } else if(err.type === 'unavailable-id'){
-      // Nuestro ID ya está en uso (reconexión), esperar y reintentar
-      setTimeout(connectToPeers, 3000);
-    } else {
-      showToast('Error: ' + err.type, 'error');
+    debug: 1,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' }
+      ]
     }
-  });
+  };
 
-  peer.on('open', () => {
-    // 1. DataChannel: cliente → perito (para enviar fotos y recibir comandos)
+  peer = new Peer(clientPeerId, PEER_CFG);
+
+  peer.on('open', id => {
+    console.log('Cliente peer abierto:', id, '→ conectando a', peritoPeerId);
+
+    // 1. DataChannel: cliente → perito
     dataConn = peer.connect(peritoPeerId, { reliable: true, serialization: 'json' });
     dataConn.on('open', () => {
+      console.log('DataChannel abierto');
       showToast('Canal de datos activo', 'success');
     });
     dataConn.on('data', data => handleCmd(data));
     dataConn.on('error', e => console.warn('dataConn error', e));
 
-    // 2. Llamada de vídeo: cliente → perito (enviamos nuestro stream)
-    const call = peer.call(peritoPeerId, stream);
-    if(!call){
-      showToast('No se pudo iniciar la llamada', 'error');
-      return;
-    }
-    call.on('stream', () => {}); // el perito no nos envía vídeo
-    call.on('error', e => console.warn('call error', e));
-    call.on('close', () => showToast('Llamada finalizada', 'warning'));
+    // 2. Llamada de vídeo: cliente → perito
+    setTimeout(() => {
+      // Pequeño delay para que el DataChannel se establezca antes de la llamada
+      const call = peer.call(peritoPeerId, stream);
+      if(!call){ showToast('No se pudo iniciar la llamada de vídeo', 'error'); return; }
+      call.on('stream', () => {});
+      call.on('error', e => { console.warn('call error', e); showToast('Error en la llamada', 'error'); });
+    }, 500);
 
-    // UI: conectado
+    // UI conectado
     document.getElementById('cs-dot').classList.add('live');
     document.getElementById('cs-text').textContent = '✓ Conectado con el perito';
     document.getElementById('cam-rec').style.opacity = '1';
     markStep(3);
     showToast('¡Conectado con el perito!', 'success');
+  });
+
+  peer.on('error', err => {
+    console.warn('PeerJS cliente error:', err.type, err.message);
+    if(err.type === 'peer-unavailable'){
+      showToast('Esperando al perito…', 'warning');
+      setTimeout(connectToPeers, 5000);
+    } else if(err.type === 'unavailable-id'){
+      // Nuestro ID ya en uso → esperar a que expire y reintentar
+      showToast('Reconectando…', 'warning');
+      setTimeout(connectToPeers, 4000);
+    } else if(err.type === 'network' || err.type === 'server-error'){
+      showToast('Error de red, reintentando…', 'error');
+      setTimeout(connectToPeers, 5000);
+    } else {
+      showToast('Error: ' + err.type, 'error');
+    }
+  });
+
+  peer.on('disconnected', () => {
+    console.warn('Peer cliente desconectado');
+    try { peer.reconnect(); } catch(e) {}
   });
 }
 
