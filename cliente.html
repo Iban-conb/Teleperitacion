@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Teleperitación</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230FB280'/><path d='M8 11a2 2 0 0 1 2-2h8l4 4v8a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V11z' fill='white' opacity='.9'/><circle cx='22' cy='14' r='4' fill='%23E4F1ED'/><path d='M20 14l3-2v4l-3-2z' fill='%230FB280'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <style>
@@ -414,7 +415,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
         <span class="material-icons-round">folder_shared</span>
         Tratamiento de datos personales
       </div>
-      <p>Sus datos serán tratados conforme al <strong>RGPD (UE) 2016/679</strong> y la LOPDGDD 3/2018. Responsable: PERITservice. Puede ejercer sus derechos en <strong>privacidad@peritservice.com</strong>.</p>
+      <p>Sus datos serán tratados conforme al <strong>RGPD (UE) 2016/679</strong> y la LOPDGDD 3/2018. Responsable: PERITservice. Puede ejercer sus derechos en <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1565677c6374767c717471556570677c61667067637c76703b767a78">[email&#160;protected]</a></strong>.</p>
     </div>
     <div class="consent-box">
       <div class="consent-box-title">
@@ -426,22 +427,22 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
   </div>
 
   <div class="consent-checks">
-    <label class="consent-check" id="cw1" onclick="toggleCheck(1)">
-      <input type="checkbox" id="chk1" onclick="event.stopPropagation()">
+    <label class="consent-check" id="cw1">
+      <input type="checkbox" id="chk1" onchange="updateConsent()">
       <div class="cct">
         <strong>Acepto la captación de imágenes y audio</strong>
         <span>Autorizo la grabación de la sesión de peritación del vehículo.</span>
       </div>
     </label>
-    <label class="consent-check" id="cw2" onclick="toggleCheck(2)">
-      <input type="checkbox" id="chk2" onclick="event.stopPropagation()">
+    <label class="consent-check" id="cw2">
+      <input type="checkbox" id="chk2" onchange="updateConsent()">
       <div class="cct">
         <strong>Acepto el tratamiento de datos personales</strong>
         <span>He leído y acepto la política de privacidad conforme al RGPD.</span>
       </div>
     </label>
-    <label class="consent-check" id="cw3" onclick="toggleCheck(3)">
-      <input type="checkbox" id="chk3" onclick="event.stopPropagation()">
+    <label class="consent-check" id="cw3">
+      <input type="checkbox" id="chk3" onchange="updateConsent()">
       <div class="cct">
         <strong>Declaro ser titular o autorizado del vehículo</strong>
         <span>Confirmo tener legitimación para autorizar esta peritación.</span>
@@ -449,7 +450,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
     </label>
   </div>
 
-  <button class="btn-consent" id="btn-consent" disabled onclick="goPerms()">
+  <button class="btn-consent" id="btn-consent" onclick="if(!this.disabled) goPerms()">
     <span class="material-icons-round">verified</span>
     Firmar y continuar
   </button>
@@ -552,7 +553,7 @@ body{font-family:var(--font);font-size:15px;background:var(--md-bg);color:var(--
   <span id="toast-msg">—</span>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════
 // TOKEN: el perito genera btoa(JSON.stringify({s,p,e,ts}))
 // Aquí lo validamos y comprobamos caducidad (30 min)
@@ -634,12 +635,11 @@ function markStep(n){
 }
 
 // ══ CONSENTIMIENTO ══
-function toggleCheck(n){
-  const chk  = document.getElementById('chk'+n);
-  const wrap = document.getElementById('cw'+n);
-  chk.checked = !chk.checked;
-  wrap.classList.toggle('checked', chk.checked);
-  const all = [1,2,3].every(i => document.getElementById('chk'+i).checked);
+function updateConsent(){
+  [1,2,3].forEach(n => {
+    document.getElementById('cw'+n).classList.toggle('checked', document.getElementById('chk'+n).checked);
+  });
+  const all = [1,2,3].every(n => document.getElementById('chk'+n).checked);
   const btn = document.getElementById('btn-consent');
   btn.disabled = !all;
   btn.classList.toggle('ready', all);
@@ -751,12 +751,4 @@ let toastTimer = null;
 function showToast(msg, type='info'){
   const icons = {success:'check_circle',warning:'warning',info:'info',error:'error'};
   const el = document.getElementById('toast');
-  document.getElementById('toast-ico').textContent = icons[type] || 'info';
-  document.getElementById('toast-msg').textContent = msg;
-  el.className = `toast show ${type}`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=> el.classList.remove('show'), 3000);
-}
-</script>
-</body>
-</html>
+  document.getElementById('toast-ico').textContent = icons

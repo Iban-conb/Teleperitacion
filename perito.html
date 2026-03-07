@@ -6,6 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Teleperitación — Panel del Perito</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23059669'/><path d='M7 12a2 2 0 0 1 2-2h9l4 4v7a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V12z' fill='white' opacity='.95'/><circle cx='23' cy='13' r='4' fill='%23083627'/><path d='M21 13l3.5-2v4L21 13z' fill='white'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <style>
@@ -1036,44 +1037,54 @@ function buildURL(){
   return base + '?t=' + token;
 }
 function updatePrev(){
-  const url=buildURL();
-  const body=S.editing?(document.getElementById('msg-custom')?.value||getTpl()):getTpl();
-  const total=body.length+url.length+2;
-  document.getElementById('prev-msg').textContent=body;
-  document.getElementById('prev-url').textContent=url;
-  document.getElementById('prev-meta').textContent=
-    S.ch==='sms'?`${total} car. · ${Math.ceil(total/160)} SMS`:
-    S.ch==='wa'?`WhatsApp · el cliente no necesita instalar nada`:
-    `${total} caracteres · email`;
+  const url  = buildURL();
+  const body = S.editing ? (document.getElementById('msg-custom')?.value||getTpl()) : getTpl();
+  // En WhatsApp y SMS el enlace va como texto plano (no hay HTML)
+  // Mostramos una línea amigable en la preview
+  const linkLine = S.ch==='mail'
+    ? `\n\n👉 <a href="${url}">Pulse aquí para conectarse</a>`
+    : `\n\n👉 Pulse aquí para conectarse:\n${url}`;
+  document.getElementById('prev-msg').textContent = body;
+  document.getElementById('prev-url').textContent =
+    S.ch==='mail' ? '(enlace clickable en el email)' : url;
+  const total = body.length + url.length + 2;
+  document.getElementById('prev-meta').textContent =
+    S.ch==='sms'  ? `${total} car. · ${Math.ceil(total/160)} SMS` :
+    S.ch==='wa'   ? `WhatsApp · el cliente no necesita instalar nada` :
+                    `${total} caracteres · email con enlace clickable`;
 }
 
 /* ════ ENVIAR ════ */
 function sendLink(){
-  const phone=document.getElementById('f-phone').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
   if(!phone){ snack('Introduce el número de teléfono','warning'); return }
-  const name=document.getElementById('f-name').value.trim();
-  const plate=document.getElementById('f-plate').value.trim();
-  const exp=document.getElementById('f-exp').value.trim();
-  const url=buildURL();
-  const body=document.getElementById('prev-msg').textContent;
-  const full=body+'\n'+url;
-  const clean=phone.replace(/\D/g,'');
+  const name  = document.getElementById('f-name').value.trim();
+  const plate = document.getElementById('f-plate').value.trim();
+  const exp   = document.getElementById('f-exp').value.trim();
+  const url   = buildURL();
+  const body  = document.getElementById('prev-msg').textContent;
+  const clean = phone.replace(/\D/g,'');
 
-  if(plate) document.getElementById('dv-mat').textContent=plate;
-  if(name)  document.getElementById('dv-cli').textContent=name;
-  document.getElementById('dv-tel').textContent=phone;
-  document.getElementById('dv-exp').textContent=exp||'—';
-  document.getElementById('chip-exp').textContent=exp||'—';
-  // Actualizar barra móvil
+  if(plate) document.getElementById('dv-mat').textContent = plate;
+  if(name)  document.getElementById('dv-cli').textContent = name;
+  document.getElementById('dv-tel').textContent = phone;
+  document.getElementById('dv-exp').textContent = exp||'—';
+  document.getElementById('chip-exp').textContent = exp||'—';
   const me = document.getElementById('mib-exp');
   if(me) me.textContent = exp||'—';
 
-  const urls={
-    wa:   `https://wa.me/${clean}?text=${encodeURIComponent(full)}`,
-    sms:  `sms:${phone}?body=${encodeURIComponent(full)}`,
-    mail: `mailto:?subject=${encodeURIComponent('Peritación telemática'+(plate?' – '+plate:''))}&body=${encodeURIComponent(full)}`,
+  // WhatsApp y SMS: texto plano con URL al final
+  // Email: enlace HTML clickable con texto "Pulse aquí"
+  const txtFull  = body + '\n\n👉 Pulse aquí para conectarse:\n' + url;
+  const mailBody = body + '\n\n' + url + '\n\n(Si el enlace no abre, cópielo en su navegador)';
+  const subject  = encodeURIComponent('Peritación telemática' + (plate ? ' – ' + plate : ''));
+
+  const urls = {
+    wa:   `https://wa.me/${clean}?text=${encodeURIComponent(txtFull)}`,
+    sms:  `sms:${phone}?body=${encodeURIComponent(txtFull)}`,
+    mail: `mailto:${phone.includes('@')?phone:''}?subject=${subject}&body=${encodeURIComponent(mailBody)}`,
   };
-  window.open(urls[S.ch],'_blank');
+  window.open(urls[S.ch], '_blank');
 
   closeDlg();
   setStatus('wait');
