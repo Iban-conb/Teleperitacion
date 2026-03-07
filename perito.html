@@ -934,10 +934,14 @@ const S = {
 const pad = n => String(n).padStart(2,'0');
 function genId(){ return 'SES-'+Date.now().toString(36).toUpperCase().slice(-6) }
 
-/* ════ PEERJS — INIT PERITO ════ */
-// El perito escucha con ID "perito-{SESSION_ID}"
-// El cliente se conecta a ese ID para enviar su stream
+/* ════ PEERJS — INIT PERITO ════
+   Rol del perito:
+   - Escucha llamadas de vídeo entrantes del cliente  (S.peer.on 'call')
+   - Escucha conexiones de datos entrantes del cliente (S.peer.on 'connection')
+   - El cliente es siempre quien inicia AMBAS conexiones
+════ */
 function initPeer(){
+  if(S.peer){ S.peer.destroy(); S.peer = null; }
   const peerId = 'perito-' + S.id;
   S.peer = new Peer(peerId, {
     host: '0.peerjs.com', port: 443, path: '/', secure: true,
@@ -945,48 +949,60 @@ function initPeer(){
   });
 
   S.peer.on('error', err => {
-    console.warn('PeerJS error:', err);
-    snack('Error de conexión: ' + err.type, 'error');
+    console.warn('PeerJS error:', err.type);
+    if(err.type === 'unavailable-id'){
+      S.id = genId();
+      document.getElementById('chip-ses').textContent = S.id;
+      document.getElementById('mib-ses').textContent  = S.id;
+      updatePrev();
+      setTimeout(initPeer, 800);
+    } else {
+      snack('Error de conexión: ' + err.type, 'error');
+    }
   });
 
-  // El cliente llama (media call) — recibimos su stream de vídeo
+  // 1. VÍDEO: el cliente llama, nosotros contestamos sin enviar stream
   S.peer.on('call', call => {
-    call.answer(); // no enviamos stream de vuelta
+    call.answer();
     call.on('stream', remoteStream => {
       const vid = document.getElementById('vid-live');
       vid.srcObject = remoteStream;
+      vid.onloadedmetadata = () => { vid.play().catch(()=>{}); };
       vid.play().catch(()=>{});
-      clientConnect();
+      // Dar tiempo al vídeo a arrancar antes de activar UI
+      setTimeout(clientConnect, 800);
     });
     call.on('close', () => { if(S.connected) endSession(true); });
+    call.on('error', e => console.warn('call error', e));
   });
 
-  // El cliente también abre un DataChannel para recibir comandos
+  // 2. DATOS: el cliente abre el DataChannel, nosotros lo recibimos
   S.peer.on('connection', conn => {
     S.dataConn = conn;
+    conn.on('open', () => snack('Canal de datos activo', 'success'));
     conn.on('data', data => {
-      if(data?.type === 'PHOTO_DATA'){
-        // Mensaje completo (compatibilidad)
+      if(!data?.type) return;
+      if(data.type === 'PHOTO_DATA'){
         receivePhoto(data.dataURL);
       }
-      if(data?.type === 'PHOTO_CHUNK'){
-        // Ensamblar trozos
-        if(!S.chunks) S.chunks = {};
+      if(data.type === 'PHOTO_CHUNK'){
         const {photoId, index, total, data: chunk} = data;
-        if(!S.chunks[photoId]) S.chunks[photoId] = {parts: [], total};
-        S.chunks[photoId].parts[index] = chunk;
-        const received = S.chunks[photoId].parts.filter(Boolean).length;
-        if(received === total){
+        if(!S.chunks[photoId]) S.chunks[photoId] = {parts: new Array(total), received: 0};
+        if(!S.chunks[photoId].parts[index]){
+          S.chunks[photoId].parts[index] = chunk;
+          S.chunks[photoId].received++;
+        }
+        if(S.chunks[photoId].received === total){
           const dataURL = S.chunks[photoId].parts.join('');
           delete S.chunks[photoId];
           receivePhoto(dataURL);
         }
       }
     });
+    conn.on('error', e => console.warn('dataConn error', e));
   });
 }
 
-// Iniciar PeerJS en cuanto carga la página
 initPeer();
 
 /* ════ TEXTOS PREDEFINIDOS ══ */
