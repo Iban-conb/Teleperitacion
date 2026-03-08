@@ -683,126 +683,56 @@ function handleCmd(data){
   }
 }
 
-// ══ CAPTURA Y ENVÍO — foto independiente del stream de vídeo ══
+// ══ CAPTURA Y ENVÍO ══
 async function captureAndSend(){
   if(!stream){ showToast('Sin cámara activa', 'error'); return; }
   doFlash();
   showToast('Capturando…', 'info');
-
   try {
-    let dataURL = null;
-
-    // ── Método 1: ImageCapture del track actual (foto del sensor real) ──
+    const vid = document.getElementById('video-el');
     const track = stream.getVideoTracks()[0];
-    if(window.ImageCapture){
+    const settings = track.getSettings();
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = settings.width  || vid.videoWidth  || 1280;
+    canvas.height = settings.height || vid.videoHeight || 720;
+    canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+
+    // ImageCapture solo si el stream va en baja res (canvas pequeño)
+    if(window.ImageCapture && canvas.width < 1000){
       try {
         const ic = new ImageCapture(track);
         const blob = await Promise.race([
           ic.takePhoto(),
-          new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')),4000))
+          new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),3000))
         ]);
-        if(blob && blob.size > 50000){
-          dataURL = await blobToDataURL(blob);
-          console.log('ImageCapture OK:', Math.round(blob.size/1024)+'KB');
-        } else {
-          console.warn('ImageCapture blob demasiado pequeño:', blob?.size);
+        if(blob?.size > 50000){
+          const url = await blobToDataURL(blob);
+          await new Promise((res,rej)=>{
+            const img = new Image();
+            img.onload = ()=>{ canvas.width=img.width; canvas.height=img.height; canvas.getContext('2d').drawImage(img,0,0); res(); };
+            img.onerror = rej;
+            img.src = url;
+          });
+          console.log('ImageCapture OK:', canvas.width+'×'+canvas.height);
         }
-      } catch(e){ console.warn('ImageCapture falló:', e.message); }
+      } catch(e){ console.warn('ImageCapture:', e.message); }
     }
 
-    // ── Método 2: stream separado a máxima resolución ──
-    if(!dataURL){
-      try {
-        const hiStream = await navigator.mediaDevices.getUserMedia({
-          video:{ facingMode, width:{ideal:4096}, height:{ideal:3072} },
-          audio: false
-        });
-        const hiTrack = hiStream.getVideoTracks()[0];
-        // Esperar a que el track esté listo
-        await new Promise(r => setTimeout(r, 400));
-
-        if(window.ImageCapture){
-          try {
-            const ic = new ImageCapture(hiTrack);
-            const blob = await Promise.race([
-              ic.takePhoto(),
-              new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')),4000))
-            ]);
-            if(blob && blob.size > 50000){
-              dataURL = await blobToDataURL(blob);
-              console.log('Hi-res ImageCapture OK:', Math.round(blob.size/1024)+'KB');
-            }
-          } catch(e){ console.warn('Hi-res ImageCapture falló:', e.message); }
-        }
-
-        // Si ImageCapture no va, capturar frame del hi-res stream
-        if(!dataURL){
-          const hiVid = document.createElement('video');
-          hiVid.srcObject = hiStream;
-          hiVid.muted = true;
-          await new Promise(r => { hiVid.onloadedmetadata = r; hiVid.play(); });
-          await new Promise(r => setTimeout(r, 300));
-          const c = document.createElement('canvas');
-          c.width  = hiVid.videoWidth;
-          c.height = hiVid.videoHeight;
-          c.getContext('2d').drawImage(hiVid, 0, 0);
-          dataURL = c.toDataURL('image/jpeg', 0.92);
-          console.log('Hi-res video frame:', hiVid.videoWidth+'×'+hiVid.videoHeight);
-        }
-
-        hiStream.getTracks().forEach(t => t.stop());
-      } catch(e){ console.warn('Hi-res stream falló:', e.message); }
+    // Comprimir hasta 500KB
+    let dataURL = canvas.toDataURL('image/jpeg', 0.85);
+    for(const q of [0.72, 0.60, 0.48, 0.36]){
+      if(dataURL.length * 0.75 <= 500*1024) break;
+      dataURL = canvas.toDataURL('image/jpeg', q);
     }
+    console.log('Foto:', canvas.width+'×'+canvas.height, Math.round(dataURL.length*0.75/1024)+'KB');
 
-    // ── Método 3: frame del vídeo actual (último recurso) ──
-    if(!dataURL){
-      const vid = document.getElementById('video-el');
-      const c = document.createElement('canvas');
-      c.width  = vid.videoWidth  || 1280;
-      c.height = vid.videoHeight || 720;
-      c.getContext('2d').drawImage(vid, 0, 0);
-      dataURL = c.toDataURL('image/jpeg', 0.95);
-      console.warn('Usando frame del stream:', c.width+'×'+c.height);
-    }
-
-    // ── Comprimir si pesa más de 700KB ──
-    const sizeKB = Math.round(dataURL.length * 0.75 / 1024);
-    console.log('Antes de comprimir:', sizeKB+'KB');
-    if(sizeKB > 700){
-      dataURL = await reducirCalidad(dataURL, 700);
-    }
-    console.log('Final:', Math.round(dataURL.length * 0.75 / 1024)+'KB, dataConn:', dataConn?.open);
-
-    if(dataConn?.open){
-      sendInChunks(dataURL);
-      showToast('Foto enviada ✓', 'success');
-    } else {
-      showToast('Sin conexión con el perito', 'warning');
-    }
+    await sendPhoto(dataURL);
 
   } catch(e){
-    console.error('captureAndSend error:', e);
+    console.error('captureAndSend:', e);
     showToast('Error al capturar', 'error');
   }
-}
-
-// Reduce calidad JPEG de un dataURL hasta caber en targetKB
-async function reducirCalidad(dataURL, targetKB){
-  return new Promise(res => {
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement('canvas');
-      c.width = img.width; c.height = img.height;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      for(const q of [0.82, 0.70, 0.58, 0.45, 0.35]){
-        const url = c.toDataURL('image/jpeg', q);
-        if(url.length * 0.75 / 1024 <= targetKB){ res(url); return; }
-      }
-      res(c.toDataURL('image/jpeg', 0.30));
-    };
-    img.src = dataURL;
-  });
 }
 
 function blobToDataURL(blob){
@@ -814,28 +744,30 @@ function blobToDataURL(blob){
   });
 }
 
-// Envío en trozos pequeños con delay para redes móviles
-function sendInChunks(dataURL){
-  const CHUNK = 16 * 1024; // 16 KB — más seguro en 4G
-  const total = Math.ceil(dataURL.length / CHUNK);
-  const photoId = 'ph-' + Date.now();
+// ══ ENVÍO DE FOTO — chunks base64 con confirmación ══
+async function sendPhoto(dataURL){
+  if(!dataConn?.open){ showToast('Sin conexión con el perito', 'warning'); return; }
 
-  let i = 0;
-  function sendNext(){
-    if(i >= total) return;
-    if(!dataConn?.open){ showToast('Conexión perdida al enviar foto', 'error'); return; }
+  const CHUNK = 8 * 1024; // 8KB — conservador, funciona en cualquier red
+  const total  = Math.ceil(dataURL.length / CHUNK);
+  const photoId = 'p' + Date.now();
+
+  console.log(`Enviando foto ${photoId}: ${Math.round(dataURL.length*0.75/1024)}KB en ${total} chunks`);
+
+  for(let i = 0; i < total; i++){
+    if(!dataConn?.open){ showToast('Conexión perdida al enviar', 'error'); return; }
     dataConn.send({
-      type:    'PHOTO_CHUNK',
-      photoId: photoId,
-      index:   i,
-      total:   total,
-      data:    dataURL.slice(i * CHUNK, (i + 1) * CHUNK)
+      type: 'PHOTO_CHUNK',
+      photoId,
+      index: i,
+      total,
+      data: dataURL.slice(i * CHUNK, (i+1) * CHUNK)
     });
-    i++;
-    // Pequeño delay entre chunks para no saturar el buffer
-    setTimeout(sendNext, 20);
+    // Esperar más en chunks grandes para no saturar el buffer
+    await new Promise(r => setTimeout(r, 40));
   }
-  sendNext();
+  showToast(`Foto enviada ✓ (${Math.round(dataURL.length*0.75/1024)}KB)`, 'success');
+  console.log('Foto enviada completa:', photoId);
 }
 
 // ══ FOTO MANUAL DEL CLIENTE ══

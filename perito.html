@@ -1030,15 +1030,22 @@ function initPeer(){
     });
     conn.on('data', data => {
       if(!data?.type) return;
+      console.log('Dato recibido tipo:', data.type, data.photoId||'', data.index !== undefined ? data.index+'/'+data.total : '');
+
       if(data.type === 'PHOTO_DATA') receivePhoto(data.dataURL);
+
       if(data.type === 'PHOTO_CHUNK'){
         const {photoId, index, total, data: chunk} = data;
-        if(!S.chunks[photoId]) S.chunks[photoId] = {parts: new Array(total).fill(null), received: 0};
+        if(!S.chunks[photoId]){
+          S.chunks[photoId] = { parts: new Array(total).fill(null), received: 0 };
+          console.log('Nueva foto:', photoId, total, 'chunks');
+        }
         if(S.chunks[photoId].parts[index] === null){
           S.chunks[photoId].parts[index] = chunk;
           S.chunks[photoId].received++;
         }
         if(S.chunks[photoId].received === total){
+          console.log('Foto completa:', photoId);
           receivePhoto(S.chunks[photoId].parts.join(''));
           delete S.chunks[photoId];
         }
