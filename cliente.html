@@ -683,58 +683,95 @@ function handleCmd(data){
   }
 }
 
-// ══ CAPTURA Y ENVÍO ══
+// ══ CAPTURA Y ENVÍO — foto independiente del stream de vídeo ══
 async function captureAndSend(){
   if(!stream){ showToast('Sin cámara activa', 'error'); return; }
   doFlash();
   showToast('Capturando…', 'info');
 
   try {
+    let dataURL = null;
+
+    // ── Método 1: ImageCapture del track actual (foto del sensor real) ──
     const track = stream.getVideoTracks()[0];
-    const settings = track.getSettings();
-    const vid = document.getElementById('video-el');
-
-    // Canvas a resolución real del track (no del stream comprimido)
-    const canvas = document.createElement('canvas');
-    canvas.width  = settings.width  || vid.videoWidth  || 1920;
-    canvas.height = settings.height || vid.videoHeight || 1080;
-    canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
-
-    // Intentar ImageCapture si está disponible (foto del sensor, no del stream)
     if(window.ImageCapture){
       try {
         const ic = new ImageCapture(track);
         const blob = await Promise.race([
           ic.takePhoto(),
-          new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 3000))
+          new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')),4000))
         ]);
-        if(blob && blob.size > 20000){
-          // Dibujar en canvas para poder comprimir
-          const bmpURL = URL.createObjectURL(blob);
-          await new Promise((res, rej) => {
-            const img = new Image();
-            img.onload = () => {
-              canvas.width  = img.width;
-              canvas.height = img.height;
-              canvas.getContext('2d').drawImage(img, 0, 0);
-              URL.revokeObjectURL(bmpURL);
-              res();
-            };
-            img.onerror = () => { URL.revokeObjectURL(bmpURL); rej(); };
-            img.src = bmpURL;
-          });
+        if(blob && blob.size > 50000){
+          dataURL = await blobToDataURL(blob);
+          console.log('ImageCapture OK:', Math.round(blob.size/1024)+'KB');
+        } else {
+          console.warn('ImageCapture blob demasiado pequeño:', blob?.size);
         }
-      } catch(e){ console.warn('ImageCapture falló, usando canvas:', e.message); }
+      } catch(e){ console.warn('ImageCapture falló:', e.message); }
     }
 
-    // Comprimir: intentar calidades hasta caber en 600KB
-    let dataURL;
-    for(const q of [0.85, 0.72, 0.60, 0.45]){
-      dataURL = canvas.toDataURL('image/jpeg', q);
-      if(dataURL.length * 0.75 <= 600 * 1024) break;
+    // ── Método 2: stream separado a máxima resolución ──
+    if(!dataURL){
+      try {
+        const hiStream = await navigator.mediaDevices.getUserMedia({
+          video:{ facingMode, width:{ideal:4096}, height:{ideal:3072} },
+          audio: false
+        });
+        const hiTrack = hiStream.getVideoTracks()[0];
+        // Esperar a que el track esté listo
+        await new Promise(r => setTimeout(r, 400));
+
+        if(window.ImageCapture){
+          try {
+            const ic = new ImageCapture(hiTrack);
+            const blob = await Promise.race([
+              ic.takePhoto(),
+              new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')),4000))
+            ]);
+            if(blob && blob.size > 50000){
+              dataURL = await blobToDataURL(blob);
+              console.log('Hi-res ImageCapture OK:', Math.round(blob.size/1024)+'KB');
+            }
+          } catch(e){ console.warn('Hi-res ImageCapture falló:', e.message); }
+        }
+
+        // Si ImageCapture no va, capturar frame del hi-res stream
+        if(!dataURL){
+          const hiVid = document.createElement('video');
+          hiVid.srcObject = hiStream;
+          hiVid.muted = true;
+          await new Promise(r => { hiVid.onloadedmetadata = r; hiVid.play(); });
+          await new Promise(r => setTimeout(r, 300));
+          const c = document.createElement('canvas');
+          c.width  = hiVid.videoWidth;
+          c.height = hiVid.videoHeight;
+          c.getContext('2d').drawImage(hiVid, 0, 0);
+          dataURL = c.toDataURL('image/jpeg', 0.92);
+          console.log('Hi-res video frame:', hiVid.videoWidth+'×'+hiVid.videoHeight);
+        }
+
+        hiStream.getTracks().forEach(t => t.stop());
+      } catch(e){ console.warn('Hi-res stream falló:', e.message); }
     }
 
-    console.log('Foto lista:', Math.round(dataURL.length * 0.75 / 1024) + 'KB, dataConn:', dataConn?.open);
+    // ── Método 3: frame del vídeo actual (último recurso) ──
+    if(!dataURL){
+      const vid = document.getElementById('video-el');
+      const c = document.createElement('canvas');
+      c.width  = vid.videoWidth  || 1280;
+      c.height = vid.videoHeight || 720;
+      c.getContext('2d').drawImage(vid, 0, 0);
+      dataURL = c.toDataURL('image/jpeg', 0.95);
+      console.warn('Usando frame del stream:', c.width+'×'+c.height);
+    }
+
+    // ── Comprimir si pesa más de 700KB ──
+    const sizeKB = Math.round(dataURL.length * 0.75 / 1024);
+    console.log('Antes de comprimir:', sizeKB+'KB');
+    if(sizeKB > 700){
+      dataURL = await reducirCalidad(dataURL, 700);
+    }
+    console.log('Final:', Math.round(dataURL.length * 0.75 / 1024)+'KB, dataConn:', dataConn?.open);
 
     if(dataConn?.open){
       sendInChunks(dataURL);
@@ -749,7 +786,24 @@ async function captureAndSend(){
   }
 }
 
-// Eliminar compressBlob — ya no se usa
+// Reduce calidad JPEG de un dataURL hasta caber en targetKB
+async function reducirCalidad(dataURL, targetKB){
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      for(const q of [0.82, 0.70, 0.58, 0.45, 0.35]){
+        const url = c.toDataURL('image/jpeg', q);
+        if(url.length * 0.75 / 1024 <= targetKB){ res(url); return; }
+      }
+      res(c.toDataURL('image/jpeg', 0.30));
+    };
+    img.src = dataURL;
+  });
+}
 
 function blobToDataURL(blob){
   return new Promise((res, rej) => {
