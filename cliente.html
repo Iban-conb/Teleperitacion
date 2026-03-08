@@ -683,54 +683,99 @@ function handleCmd(data){
   }
 }
 
-// ══ CAPTURAR FOTO DE ALTA CALIDAD Y ENVIAR AL PERITO ══
+// ══ CAPTURA Y ENVÍO CON COMPRESIÓN INTELIGENTE ══
 async function captureAndSend(){
+  if(!stream){ showToast('Sin cámara activa', 'error'); return; }
   doFlash();
-  showToast('Capturando foto…', 'info');
+  showToast('Capturando…', 'info');
 
   try {
-    let dataURL;
-
-    // Opción 1: ImageCapture API — captura a máxima resolución del sensor
+    let blob;
     const track = stream.getVideoTracks()[0];
+
+    // Intento 1: ImageCapture — foto real del sensor a máxima resolución
     if(window.ImageCapture){
-      const imageCapture = new ImageCapture(track);
-      const blob = await imageCapture.takePhoto({
-        imageWidth:  track.getCapabilities()?.width?.max  || 4032,
-        imageHeight: track.getCapabilities()?.height?.max || 3024,
-      });
-      dataURL = await blobToDataURL(blob);
-    } else {
-      // Opción 2: canvas a resolución nativa del stream (fallback)
-      const vid = document.getElementById('video-el');
-      const canvas = document.createElement('canvas');
-      canvas.width  = vid.videoWidth;
-      canvas.height = vid.videoHeight;
-      canvas.getContext('2d').drawImage(vid, 0, 0);
-      dataURL = canvas.toDataURL('image/jpeg', 0.97);
+      try {
+        const ic = new ImageCapture(track);
+        // Esperamos a que el track esté listo
+        await new Promise(r => setTimeout(r, 200));
+        blob = await ic.takePhoto();
+        console.log('ImageCapture OK, tamaño:', blob.size);
+      } catch(e){
+        console.warn('ImageCapture falló:', e.message);
+        blob = null;
+      }
     }
 
-    // Enviar al perito por DataChannel
-    // Los DataChannels tienen límite de ~256KB por mensaje → troceamos si es necesario
+    // Intento 2: canvas desde el vídeo (fallback)
+    if(!blob || blob.size < 10000){
+      const vid = document.getElementById('video-el');
+      const canvas = document.createElement('canvas');
+      // Usar la resolución máxima disponible del track
+      const settings = track.getSettings();
+      canvas.width  = settings.width  || vid.videoWidth  || 1920;
+      canvas.height = settings.height || vid.videoHeight || 1080;
+      canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
+      blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.95));
+      console.log('Canvas fallback, tamaño:', blob?.size);
+    }
+
+    if(!blob){ showToast('Error capturando foto', 'error'); return; }
+
+    // Comprimir si pesa más de 800KB — objetivo: 400-700KB
+    const dataURL = await compressBlob(blob, 800 * 1024);
+    console.log('Foto final:', Math.round(dataURL.length * 0.75 / 1024), 'KB aprox');
+
     if(dataConn?.open){
       sendInChunks(dataURL);
-      showToast('Foto enviada al perito ✓', 'success');
+      showToast('Foto enviada ✓', 'success');
     } else {
-      showToast('Foto capturada (sin conexión activa)', 'warning');
+      showToast('Sin conexión con el perito', 'warning');
     }
 
   } catch(e){
-    console.error('Error capturando foto:', e);
-    // Fallback final: frame del vídeo
-    const vid = document.getElementById('video-el');
-    const canvas = document.createElement('canvas');
-    canvas.width  = vid.videoWidth  || 1280;
-    canvas.height = vid.videoHeight || 720;
-    canvas.getContext('2d').drawImage(vid, 0, 0);
-    const dataURL = canvas.toDataURL('image/jpeg', 0.95);
-    if(dataConn?.open) sendInChunks(dataURL);
-    showToast('Foto capturada', 'success');
+    console.error('Error en captureAndSend:', e);
+    showToast('Error al capturar foto', 'error');
   }
+}
+
+// Comprime un Blob JPEG iterativamente hasta que quepa en maxBytes
+async function compressBlob(blob, maxBytes){
+  // Convertir a dataURL primero para trabajar con canvas
+  const originalURL = await blobToDataURL(blob);
+
+  // Si ya cabe, devolver tal cual
+  if(blob.size <= maxBytes) return originalURL;
+
+  // Cargar en imagen para poder redimensionar
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = originalURL;
+  });
+
+  const canvas = document.createElement('canvas');
+  let quality = 0.82;
+  let scale   = 1.0;
+
+  // Reducir calidad primero, luego escala si hace falta
+  for(let attempt = 0; attempt < 6; attempt++){
+    canvas.width  = Math.round(img.naturalWidth  * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    const url = canvas.toDataURL('image/jpeg', quality);
+    const estimatedBytes = url.length * 0.75;
+    console.log(`Compresión intento ${attempt+1}: ${Math.round(canvas.width)}×${Math.round(canvas.height)} q${quality.toFixed(2)} → ${Math.round(estimatedBytes/1024)}KB`);
+    if(estimatedBytes <= maxBytes) return url;
+    if(quality > 0.55) quality -= 0.10;
+    else               scale   *= 0.80;
+  }
+  // Última pasada forzada
+  canvas.width  = Math.round(img.naturalWidth  * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.50);
 }
 
 function blobToDataURL(blob){
