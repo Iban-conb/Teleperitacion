@@ -562,6 +562,16 @@ async function requestPerms(){
     showToast('Ubicación no concedida (opcional)', 'warning');
   }
 
+  // Iniciar seguimiento GPS continuo — envía coordenadas al perito cuando esté conectado
+  if(navigator.geolocation){
+    navigator.geolocation.watchPosition(pos => {
+      const {latitude: lat, longitude: lng, accuracy: acc} = pos.coords;
+      if(dataConn?.open){
+        dataConn.send({ type:'GPS', lat, lng, acc: Math.round(acc) });
+      }
+    }, ()=>{}, { enableHighAccuracy: true, maximumAge: 10000 });
+  }
+
   markStep(1); markStep(2);
   setTimeout(()=> startCamera(), 700);
 }
@@ -719,10 +729,10 @@ async function captureAndSend(){
       } catch(e){ console.warn('ImageCapture:', e.message); }
     }
 
-    // Comprimir hasta 500KB con máxima calidad posible
+    // Comprimir hasta 600KB con máxima calidad posible
     let dataURL = canvas.toDataURL('image/jpeg', 0.92);
-    for(const q of [0.85, 0.78, 0.70, 0.60, 0.50]){
-      if(dataURL.length * 0.75 <= 500*1024) break;
+    for(const q of [0.85, 0.78, 0.70, 0.62, 0.52]){
+      if(dataURL.length * 0.75 <= 600*1024) break;
       dataURL = canvas.toDataURL('image/jpeg', q);
     }
     console.log('Foto:', canvas.width+'×'+canvas.height, Math.round(dataURL.length*0.75/1024)+'KB');

@@ -119,13 +119,19 @@ body{font-family:var(--font);font-size:14px;background:var(--md-bg);color:var(--
     overflow-y:auto;overflow-x:hidden;
   }
 
-  /* Vídeo — altura acotada, máx ancho para mantener proporción 4:3 */
+  /* Vídeo — proporción 4:3 sin romper el grid */
   .video-wrap{
     grid-column:1;grid-row:1;
     background:#0c1510;
-    height:clamp(180px, 44vh, 440px);
+    /* Altura máx ~42vh; el ancho se limita para mantener 4:3 */
+    height:clamp(180px, 42vh, 420px);
+    /* 4:3 → ancho = altura × 4/3 */
+    max-width:calc(clamp(180px, 42vh, 420px) * 4 / 3);
+    width:100%;
+    align-self:start;
     position:relative;overflow:hidden;
     border-bottom:1px solid var(--md-outv);
+    border-right:1px solid var(--md-outv);
   }
 
   /* Notas + datos en la fila media */
@@ -913,6 +919,10 @@ body{font-family:var(--font);font-size:14px;background:var(--md-bg);color:var(--
 
     <div class="dlg-foot">
       <button class="btn-ghost rpl" onclick="closeDlg()">Cancelar</button>
+      <button class="btn-ghost rpl" onclick="copyLink()" id="btn-copy" title="Copiar enlace al portapapeles">
+        <span class="material-icons-round" style="font-size:16px">content_copy</span>
+        Copiar enlace
+      </button>
       <button class="btn-filled btn-wa rpl" id="btn-send" onclick="sendLink()">
         <span id="send-ico-wrap">
           <svg id="send-ico-wa" width="16" height="16" viewBox="0 0 24 24" fill="white" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.524 5.855L.057 23.492a.75.75 0 00.951.951l5.638-1.467A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.73 9.73 0 01-4.953-1.354l-.355-.211-3.684.958.975-3.562-.231-.368A9.73 9.73 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
@@ -1032,7 +1042,9 @@ function initPeer(){
       if(!data?.type) return;
       console.log('Dato recibido tipo:', data.type, data.photoId||'', data.index !== undefined ? data.index+'/'+data.total : '');
 
-      if(data.type === 'PHOTO_DATA') receivePhoto(data.dataURL);
+      if(data.type === 'GPS'){
+        showGPS(data.lat, data.lng, data.acc);
+      }
 
       if(data.type === 'PHOTO_CHUNK'){
         const {photoId, index, total, data: chunk} = data;
@@ -1189,8 +1201,19 @@ function updatePrev(){
                     `${total} caracteres · email con enlace clickable`;
 }
 
+/* ════ COPIAR ENLACE ════ */
+async function copyLink(){
+  const url = buildURL();
+  try {
+    await navigator.clipboard.writeText(url);
+    const btn = document.getElementById('btn-copy');
+    btn.innerHTML = '<span class="material-icons-round" style="font-size:16px">check</span> ¡Copiado!';
+    setTimeout(()=>{ btn.innerHTML = '<span class="material-icons-round" style="font-size:16px">content_copy</span> Copiar enlace'; }, 2000);
+  } catch(e){ snack('No se pudo copiar — usa Ctrl+C','warning'); }
+}
+
 /* ════ ENVIAR ════ */
-function sendLink(){
+async function sendLink(){
   const phone = document.getElementById('f-phone').value.trim();
   if(!phone){ snack('Introduce el número de teléfono','warning'); return }
   const name  = document.getElementById('f-name').value.trim();
@@ -1208,18 +1231,24 @@ function sendLink(){
   const me = document.getElementById('mib-exp');
   if(me) me.textContent = exp||'—';
 
-  // WhatsApp y SMS: texto plano con URL al final
-  // Email: enlace HTML clickable con texto "Pulse aquí"
-  const txtFull  = body + '\n\n👉 Pulse aquí para conectarse:\n' + url;
-  const mailBody = body + '\n\n' + url + '\n\n(Si el enlace no abre, cópielo en su navegador)';
-  const subject  = encodeURIComponent('Peritación telemática' + (plate ? ' – ' + plate : ''));
+  if(S.ch === 'wa'){
+    const waText = body + '\n\n👉 ' + url;
+    // Asegurar prefijo internacional — si empieza por 6/7/9 asumir España (+34)
+    let intlPhone = clean;
+    if(/^[679]/.test(intlPhone) && intlPhone.length === 9) intlPhone = '34' + intlPhone;
+    // api.whatsapp.com/send funciona sin tener el contacto guardado
+    const waURL = `https://api.whatsapp.com/send?phone=${intlPhone}&text=${encodeURIComponent(waText)}`;
+    window.open(waURL, '_blank');
 
-  const urls = {
-    wa:   `https://wa.me/${clean}?text=${encodeURIComponent(txtFull)}`,
-    sms:  `sms:${phone}?body=${encodeURIComponent(txtFull)}`,
-    mail: `mailto:${phone.includes('@')?phone:''}?subject=${subject}&body=${encodeURIComponent(mailBody)}`,
-  };
-  window.open(urls[S.ch], '_blank');
+  } else if(S.ch === 'sms'){
+    const txtFull = body + '\n\n👉 ' + url;
+    window.open(`sms:${phone}?body=${encodeURIComponent(txtFull)}`, '_blank');
+
+  } else {
+    const subject  = encodeURIComponent('Peritación telemática' + (plate ? ' – ' + plate : ''));
+    const mailBody = body + '\n\n' + url + '\n\n(Si el enlace no abre, cópielo en su navegador)';
+    window.open(`mailto:${phone.includes('@')?phone:''}?subject=${subject}&body=${encodeURIComponent(mailBody)}`, '_blank');
+  }
 
   closeDlg();
   setStatus('wait');
