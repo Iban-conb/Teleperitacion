@@ -719,10 +719,10 @@ async function captureAndSend(){
       } catch(e){ console.warn('ImageCapture:', e.message); }
     }
 
-    // Comprimir hasta 500KB
-    let dataURL = canvas.toDataURL('image/jpeg', 0.85);
-    for(const q of [0.72, 0.60, 0.48, 0.36]){
-      if(dataURL.length * 0.75 <= 500*1024) break;
+    // Comprimir hasta 1.2MB
+    let dataURL = canvas.toDataURL('image/jpeg', 0.92);
+    for(const q of [0.85, 0.78, 0.70, 0.60]){
+      if(dataURL.length * 0.75 <= 1200*1024) break;
       dataURL = canvas.toDataURL('image/jpeg', q);
     }
     console.log('Foto:', canvas.width+'×'+canvas.height, Math.round(dataURL.length*0.75/1024)+'KB');
@@ -748,7 +748,7 @@ function blobToDataURL(blob){
 async function sendPhoto(dataURL){
   if(!dataConn?.open){ showToast('Sin conexión con el perito', 'warning'); return; }
 
-  const CHUNK = 8 * 1024; // 8KB — conservador, funciona en cualquier red
+  const CHUNK = 16 * 1024; // 16KB
   const total  = Math.ceil(dataURL.length / CHUNK);
   const photoId = 'p' + Date.now();
 
